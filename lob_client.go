@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
+	"net/http/httputil"
 	"os"
 )
 
@@ -28,6 +32,10 @@ type GetAddressResponse struct {
 	AddressState   string `json:"address_state"`
 	AddressZip     string `json:"address_zip"`
 	AddressCountry string `json:"address_country"`
+}
+
+type CreatePostcardResponse struct {
+	Url string `json:"url"`
 }
 
 func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
@@ -53,4 +61,56 @@ func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
 		return nil, err
 	}
 	return &getAddressResponse, nil
+}
+
+// https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
+// https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
+func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte) (*CreatePostcardResponse, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// TODO come up with correct fileName
+	frontPart, _ := writer.CreateFormFile("front", "user-upload")
+	io.Copy(frontPart, bytes.NewReader(frontImage))
+
+	_ = writer.WriteField("back", "<body>hello, back!</body>")
+	_ = writer.WriteField("to", toLobAddressId)
+	_ = writer.WriteField("from", fromLobAddressId)
+
+	writer.Close()
+
+	// TODO update with formatting
+	postPostcardUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + postcardsRoute
+	req, err := http.NewRequest("POST", postPostcardUrl, body)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	// update to read from actual response
+	var createPostcardResponse CreatePostcardResponse
+	if err := json.NewDecoder(resp.Body).Decode(&createPostcardResponse); err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	// TODO pull
+	fmt.Println(resp.StatusCode)
+	b, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	log.Println(string(b))
+
+	return &createPostcardResponse, nil
 }

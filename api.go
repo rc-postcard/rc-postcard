@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -38,6 +41,63 @@ func serveAddress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := json.Marshal(getAddressResponse)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
+	return
+}
+
+func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
+	if !verifyRoute(w, r, http.MethodPost, "/postcardPreview") {
+		return
+	}
+
+	// authenticate and get userId from token
+	// TODO add support for session
+	_, err := authPersonalAccessToken(r)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Parse our multipart form, 10 << 20 specifies a maximum
+	// upload of 10 MB files.
+	r.ParseMultipartForm(10 << 20)
+	// FormFile returns the first file for the given key `myFile`
+	// it also returns the FileHeader so we can get the Filename,
+	// the Header and the size of the file
+	file, _, err := r.FormFile("front-postcard-file")
+	if err != nil {
+		log.Println("Error Retrieving the File")
+		log.Println(err)
+		return
+	}
+	defer file.Close()
+
+	// read all of the contents of our uploaded file into a
+	// byte array
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Println(err)
+	}
+
+	createPostCardResponse, err := lobClient.CreatePostCard(os.Getenv("LOB_TEST_ADDRESS_ID"), os.Getenv("LOB_TEST_ADDRESS_ID"), fileBytes)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println(createPostCardResponse)
+
+	resp, err := JSONMarshal(createPostCardResponse)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -89,4 +149,12 @@ func authPersonalAccessToken(r *http.Request) (*User, error) {
 	// update cache
 	pacCache[pacToken] = &user
 	return pacCache[pacToken], nil
+}
+
+func JSONMarshal(t interface{}) ([]byte, error) {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(t)
+	return buffer.Bytes(), err
 }
