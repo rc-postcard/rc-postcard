@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -94,8 +95,19 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// return that we have successfully uploaded our file!
-	fmt.Fprintf(w, createPostCardResponse.Url)
+	fmt.Println(createPostCardResponse)
+
+	resp, err := JSONMarshal(createPostCardResponse)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
+	return
 }
 
 // authPersonalAccessToken will authenticate an Authorization header by
@@ -137,4 +149,12 @@ func authPersonalAccessToken(r *http.Request) (*User, error) {
 	// update cache
 	pacCache[pacToken] = &user
 	return pacCache[pacToken], nil
+}
+
+func JSONMarshal(t interface{}) ([]byte, error) {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(t)
+	return buffer.Bytes(), err
 }
