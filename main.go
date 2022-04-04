@@ -7,6 +7,9 @@ import (
 	"os"
 )
 
+// TODO don't use default client
+var client *http.Client = http.DefaultClient
+
 var addr = flag.String("addr", ":8080", "http service address")
 
 func main() {
@@ -18,6 +21,7 @@ func main() {
 		"OAUTH_REDIRECT",
 		"OAUTH_CLIENT_ID",
 		"OAUTH_CLIENT_SECRET",
+		"LOB_API_TEST_KEY",
 	} {
 		if _, ok := os.LookupEnv(env); !ok {
 			log.Println("Required environment variable missing:", env)
@@ -32,6 +36,7 @@ func main() {
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/login", serveLogin)
 	http.HandleFunc("/auth", serveAuth)
+	http.HandleFunc("/address", serveAddress)
 
 	log.Printf("Running on port %s\n", *addr)
 
