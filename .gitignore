@@ -1,9 +1,14 @@
+# Env secrets
+.env
+env
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+rc-postcard
 
 # Test binary, built with `go test -c`
 *.test
