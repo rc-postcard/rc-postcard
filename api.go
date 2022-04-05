@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,6 +14,37 @@ import (
 var pacCache = map[string]*User{}
 
 func serveAddress(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		createAddress(w, r)
+	} else {
+		getAddress(w, r)
+	}
+}
+
+func createAddress(w http.ResponseWriter, r *http.Request) {
+	if !verifyRoute(w, r, http.MethodPost, "/address") {
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		log.Println(err)
+		http.Error(w, "Form error", http.StatusBadRequest)
+		return
+	}
+
+	name := r.Form["name"]
+	address1 := r.Form["address1"]
+	address2 := r.Form["address2"]
+	city := r.Form["city"]
+	state := r.Form["state"]
+	zip := r.Form["zip"]
+
+	log.Printf("%s %s %s %s %s %s", name, address1, address2, city, state, zip)
+
+	return
+}
+
+func getAddress(w http.ResponseWriter, r *http.Request) {
 	if !verifyRoute(w, r, http.MethodGet, "/address") {
 		return
 	}
@@ -94,8 +124,6 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Println(createPostCardResponse)
 
 	resp, err := JSONMarshal(createPostCardResponse)
 	if err != nil {
