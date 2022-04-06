@@ -22,6 +22,7 @@ func main() {
 		"OAUTH_CLIENT_ID",
 		"OAUTH_CLIENT_SECRET",
 		"LOB_API_TEST_KEY",
+		"PG_DATABASE_URL",
 	} {
 		if _, ok := os.LookupEnv(env); !ok {
 			log.Println("Required environment variable missing:", env)
@@ -32,6 +33,13 @@ func main() {
 		log.Println("Aborting")
 		os.Exit(1)
 	}
+
+	// setup postgres connection
+	if err := setupPostgresConnection(); err != nil {
+		log.Println("Error setting up postgres:", err)
+		os.Exit(1)
+	}
+	defer postgresClient.Close()
 
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/login", serveLogin)
