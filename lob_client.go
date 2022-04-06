@@ -34,6 +34,24 @@ type GetAddressResponse struct {
 	AddressCountry string `json:"address_country"`
 }
 
+type CreateAddressRequest struct {
+	Name         string `json:"name"`
+	AddressLine1 string `json:"address_line1"`
+	AddressLine2 string `json:"address_line2"`
+	AddressCity  string `json:"address_city"`
+	AddressState string `json:"address_state"`
+	AddressZip   string `json:"address_zip"`
+}
+
+type CreateAddressResponse struct {
+	Name         string `json:"name"`
+	AddressLine1 string `json:"address_line1"`
+	AddressLine2 string `json:"address_line2"`
+	AddressCity  string `json:"address_city"`
+	AddressState string `json:"address_state"`
+	AddressZip   string `json:"address_zip"`
+}
+
 type CreatePostcardResponse struct {
 	Url string `json:"url"`
 }
@@ -61,6 +79,46 @@ func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
 		return nil, err
 	}
 	return &getAddressResponse, nil
+}
+
+func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string) (*CreateAddressResponse, error) {
+	createAddressRequest := &CreateAddressRequest{
+		Name:         name,
+		AddressLine1: addressLine1,
+		AddressLine2: addressLine2,
+		AddressCity:  city,
+		AddressState: state,
+		AddressZip:   zipCode,
+	}
+
+	marshalledCreateAddressRequest, err := json.Marshal(createAddressRequest)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	createAddressUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + addressesRoute
+	req, err := http.NewRequest("POST", createAddressUrl, bytes.NewBuffer(marshalledCreateAddressRequest))
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	var createAddressResponse CreateAddressResponse
+	if err := json.NewDecoder(resp.Body).Decode(&createAddressResponse); err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return &createAddressResponse, nil
 }
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5

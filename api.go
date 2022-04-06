@@ -26,21 +26,34 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Add auth
+
 	if err := r.ParseForm(); err != nil {
 		log.Println(err)
 		http.Error(w, "Form error", http.StatusBadRequest)
 		return
 	}
 
-	name := r.Form["name"]
-	address1 := r.Form["address1"]
-	address2 := r.Form["address2"]
-	city := r.Form["city"]
-	state := r.Form["state"]
-	zip := r.Form["zip"]
+	name, address1, address2 := r.FormValue("name"), r.FormValue("address1"), r.FormValue("address2")
+	city, state, zip := r.FormValue("city"), r.FormValue("state"), r.FormValue("zip")
 
-	log.Printf("%s %s %s %s %s %s", name, address1, address2, city, state, zip)
+	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Error creating address", http.StatusInternalServerError)
+		return
+	}
 
+	resp, err := JSONMarshal(createAddressResponse)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
 	return
 }
 

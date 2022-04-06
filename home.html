@@ -67,8 +67,8 @@
         <input type="submit" value="Submit">
     </form>
 
-    <form action="/postcard">
-        <input type="file" id="myFile" name="filename">
+    <form enctype="multipart/form-data" method="POST" name="fileinfo" action="/postcardPreview">
+        <input type="file" id="myFile" name="front-postcard-file">
         <input type="submit">
     </form>
 </head>
