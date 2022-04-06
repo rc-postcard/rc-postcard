@@ -64,16 +64,19 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 
 	// authenticate and get userId from token
 	// TODO add support for session
-	_, err := authPersonalAccessToken(r)
+	user, err := authPersonalAccessToken(r)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	// get address using userId
-	// TODO update to use postgres
-	lobAddressId := os.Getenv("LOB_TEST_ADDRESS_ID")
+	var lobAddressId string
+	if err = postgresClient.QueryRow("SELECT lob_address_id FROM user_info WHERE recurse_id = $1", user.Id).Scan(&lobAddressId); err != nil {
+		log.Printf("QueryRow failed: %v\n", err)
+		http.Error(w, "Failed to get user from DB. Try creating/updating address", http.StatusNotFound) // TODO upadate err handling
+		return
+	}
 
 	// use lobClient to get address
 	getAddressResponse, err := lobClient.GetAddress(lobAddressId)
