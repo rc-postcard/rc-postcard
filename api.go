@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,6 +14,50 @@ import (
 var pacCache = map[string]*User{}
 
 func serveAddress(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		createAddress(w, r)
+	} else {
+		getAddress(w, r)
+	}
+}
+
+func createAddress(w http.ResponseWriter, r *http.Request) {
+	if !verifyRoute(w, r, http.MethodPost, "/address") {
+		return
+	}
+
+	// Add auth
+
+	if err := r.ParseForm(); err != nil {
+		log.Println(err)
+		http.Error(w, "Form error", http.StatusBadRequest)
+		return
+	}
+
+	name, address1, address2 := r.FormValue("name"), r.FormValue("address1"), r.FormValue("address2")
+	city, state, zip := r.FormValue("city"), r.FormValue("state"), r.FormValue("zip")
+
+	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Error creating address", http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := JSONMarshal(createAddressResponse)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
+	return
+}
+
+func getAddress(w http.ResponseWriter, r *http.Request) {
 	if !verifyRoute(w, r, http.MethodGet, "/address") {
 		return
 	}
@@ -94,8 +137,6 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Println(createPostCardResponse)
 
 	resp, err := JSONMarshal(createPostCardResponse)
 	if err != nil {

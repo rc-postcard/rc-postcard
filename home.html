@@ -4,10 +4,73 @@
 <head>
     <title>rc-postcar</title>
     <script type="text/javascript">
-        window.onload = function () {}
+        window.onload = function () { }
     </script>
-    <style type="text/css">
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: sans-serif;
+            color: #333333;
+        }
+
+        input {
+            display: block;
+            font-size: 1.05rem;
+            width: 100%;
+            padding: 10px;
+            border-radius: .25rem;
+            border: solid 1px #8c8c8c;
+            margin: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 1.1rem;
+            margin: 20px 0 5px 0;
+        }
+
+        input[type='submit'] {
+            background-color: #0594d8;
+            color: #ffffff;
+            border-color: #ffffff;
+            font-size: 1.1rem;
+            margin-top: 10px;
+            width: 100px;
+        }
     </style>
+
+    <form action="/address" method="POST">
+        <div>
+            <label for="name">Name</label>
+            <input id="name" name="name">
+        </div>
+        <div>
+            <label for="address1">Address 1</label>
+            <input id="address1" name="address1">
+        </div>
+        <div>
+            <label for="address2">Address 2</label>
+            <input id="address2" name="address2">
+        </div>
+        <div>
+            <label for="city">City</label>
+            <input id="city" name="city">
+        </div>
+        <div>
+            <label for="state">State</label>
+            <input id="state" name="state">
+        </div>
+        <div>
+            <label for="zip">Zip</label>
+            <input id="zip" name="zip">
+        </div>
+        <input type="submit" value="Submit">
+    </form>
+
+    <form enctype="multipart/form-data" method="POST" name="fileinfo" action="/postcardPreview">
+        <input type="file" id="myFile" name="front-postcard-file">
+        <input type="submit">
+    </form>
 </head>
 
 <body>
