@@ -26,7 +26,14 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Add auth
+	// authenticate and get userId from token
+	// TODO add support for session
+	user, err := authPersonalAccessToken(r)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	if err := r.ParseForm(); err != nil {
 		log.Println(err)
@@ -44,6 +51,18 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// update postgres
+	if _, err = postgresClient.Exec(
+		"INSERT INTO user_info (recurse_id, lob_address_id) VALUES ($1, $2) ON CONFLICT (recurse_id) DO UPDATE SET lob_address_id = excluded.lob_address_id",
+		user.Id,
+		createAddressResponse.AddressId); err != nil {
+		log.Println(err)
+		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
+		return
+	}
+
+	// Hide address id from user
+	createAddressResponse.AddressId = ""
 	resp, err := JSONMarshal(createAddressResponse)
 	if err != nil {
 		log.Println(err)

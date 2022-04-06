@@ -44,6 +44,7 @@ type CreateAddressRequest struct {
 }
 
 type CreateAddressResponse struct {
+	AddressId    string `json:"id"`
 	Name         string `json:"name"`
 	AddressLine1 string `json:"address_line1"`
 	AddressLine2 string `json:"address_line2"`
