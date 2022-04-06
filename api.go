@@ -26,7 +26,14 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Add auth
+	// authenticate and get userId from token
+	// TODO add support for session
+	user, err := authPersonalAccessToken(r)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	if err := r.ParseForm(); err != nil {
 		log.Println(err)
@@ -44,6 +51,18 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// update postgres
+	if _, err = postgresClient.Exec(
+		"INSERT INTO user_info (recurse_id, lob_address_id) VALUES ($1, $2) ON CONFLICT (recurse_id) DO UPDATE SET lob_address_id = excluded.lob_address_id",
+		user.Id,
+		createAddressResponse.AddressId); err != nil {
+		log.Println(err)
+		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
+		return
+	}
+
+	// Hide address id from user
+	createAddressResponse.AddressId = ""
 	resp, err := JSONMarshal(createAddressResponse)
 	if err != nil {
 		log.Println(err)
@@ -64,16 +83,19 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 
 	// authenticate and get userId from token
 	// TODO add support for session
-	_, err := authPersonalAccessToken(r)
+	user, err := authPersonalAccessToken(r)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	// get address using userId
-	// TODO update to use postgres
-	lobAddressId := os.Getenv("LOB_TEST_ADDRESS_ID")
+	var lobAddressId string
+	if err = postgresClient.QueryRow("SELECT lob_address_id FROM user_info WHERE recurse_id = $1", user.Id).Scan(&lobAddressId); err != nil {
+		log.Printf("QueryRow failed: %v\n", err)
+		http.Error(w, "Failed to get user from DB. Try creating/updating address", http.StatusNotFound) // TODO upadate err handling
+		return
+	}
 
 	// use lobClient to get address
 	getAddressResponse, err := lobClient.GetAddress(lobAddressId)
