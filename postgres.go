@@ -69,7 +69,6 @@ func (*PostgresClient) getContacts() ([]*Contact, error) {
 }
 
 func (*PostgresClient) insertUser(recurseId int, lobAddressId, userName, userEmail string) error {
-	// update postgres
 	if _, err := db.Exec(
 		"INSERT INTO user_info (recurse_id, lob_address_id, user_name, user_email) VALUES ($1, $2, $3, $4) ON CONFLICT (recurse_id) DO UPDATE SET lob_address_id = excluded.lob_address_id",
 		recurseId,
@@ -82,7 +81,6 @@ func (*PostgresClient) insertUser(recurseId int, lobAddressId, userName, userEma
 }
 
 func (*PostgresClient) deleteUser(recurseId int) error {
-	// update postgres
 	if _, err := db.Exec(
 		"DELETE FROM user_info WHERE recurse_id = $1",
 		recurseId); err != nil {
