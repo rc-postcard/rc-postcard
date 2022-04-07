@@ -304,7 +304,7 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 	log.Println(recipientAddressId)
 	log.Println(len(recipientAddressId))
 	log.Println(len(rcAddressId))
-	createPostCardResponse, err := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes)
+	createPostCardResponse, err := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, isPreview)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
