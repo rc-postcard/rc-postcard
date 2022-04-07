@@ -29,3 +29,6 @@ TODO: make tools to make postcard management easier
 - Send with payment
 - Get POSTCARD (see status)
 - Message on back of post card (comic sands)
+- Add metadata to address
+- Add middleware
+- Add scripts to make processing easier

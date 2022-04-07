@@ -7,11 +7,62 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
+	"strconv"
 )
 
 // pacCache is a personal access token cache used by the /tile API
 var pacCache = map[string]*User{}
+
+type Contact struct {
+	RecurseId int    `json:"recurseId"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+}
+
+type ContactsResponse struct {
+	Contacts []*Contact `json:"contacts"`
+}
+
+func serveContacts(w http.ResponseWriter, r *http.Request) {
+	if !verifyRoute(w, r, http.MethodGet, "/contacts") {
+		return
+	}
+
+	// authenticate and get userId from token
+	// TODO add support for session
+	_, err := authPersonalAccessToken(r)
+	if err != nil {
+		log.Println(err)
+
+		currentSession, err := getSession(r)
+		if err == nil && currentSession.isAuthenticated() {
+		} else {
+			log.Println(err)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	contacts, err := postgresClient.getContacts()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Error getting contacts from db", http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := JSONMarshal(ContactsResponse{Contacts: contacts})
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
+	return
+
+}
 
 func serveAddress(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
@@ -27,7 +78,7 @@ func serveAddress(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteAddress(w http.ResponseWriter, r *http.Request) {
-	if !verifyRoute(w, r, http.MethodDelete, "/address") {
+	if !verifyRoute(w, r, http.MethodDelete, "/addresses") {
 		return
 	}
 
@@ -40,7 +91,7 @@ func deleteAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lobAddressId, err := getLobAddressId(user.Id)
+	lobAddressId, err := postgresClient.getLobAddressId(user.Id)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "No address found that corresponds to this user.", http.StatusNotFound)
@@ -53,13 +104,9 @@ func deleteAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// update postgres
-	if _, err = postgresClient.Exec(
-		"DELETE FROM user_info WHERE recurse_id = $1",
-		user.Id); err != nil {
+	if err = postgresClient.deleteUser(user.Id); err != nil {
 		log.Println(err)
 		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
-		return
 	}
 
 	w.WriteHeader(http.StatusAccepted)
@@ -67,17 +114,25 @@ func deleteAddress(w http.ResponseWriter, r *http.Request) {
 }
 
 func createAddress(w http.ResponseWriter, r *http.Request) {
-	if !verifyRoute(w, r, http.MethodPost, "/address") {
+	if !verifyRoute(w, r, http.MethodPost, "/addresses") {
 		return
 	}
 
+	var user *User
 	// authenticate and get userId from token
 	// TODO add support for session
 	user, err := authPersonalAccessToken(r)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
+
+		currentSession, err := getSession(r)
+		if err == nil && currentSession.isAuthenticated() {
+			user = &currentSession.User
+		} else {
+			log.Println(err)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 	}
 
 	if err := r.ParseForm(); err != nil {
@@ -96,11 +151,7 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// update postgres
-	if _, err = postgresClient.Exec(
-		"INSERT INTO user_info (recurse_id, lob_address_id) VALUES ($1, $2) ON CONFLICT (recurse_id) DO UPDATE SET lob_address_id = excluded.lob_address_id",
-		user.Id,
-		createAddressResponse.AddressId); err != nil {
+	if err = postgresClient.insertUser(user.Id, createAddressResponse.AddressId, user.Name, user.Email); err != nil {
 		log.Println(err)
 		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
 		return
@@ -122,20 +173,28 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAddress(w http.ResponseWriter, r *http.Request) {
-	if !verifyRoute(w, r, http.MethodGet, "/address") {
+	if !verifyRoute(w, r, http.MethodGet, "/addresses") {
 		return
 	}
 
+	var user *User
 	// authenticate and get userId from token
 	// TODO add support for session
 	user, err := authPersonalAccessToken(r)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
+
+		currentSession, err := getSession(r)
+		if err == nil && currentSession.isAuthenticated() {
+			user = &currentSession.User
+		} else {
+			log.Println(err)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 	}
 
-	lobAddressId, err := getLobAddressId(user.Id)
+	lobAddressId, err := postgresClient.getLobAddressId(user.Id)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "No address found that corresponds to this user.", http.StatusNotFound)
@@ -164,7 +223,17 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 }
 
 func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
-	if !verifyRoute(w, r, http.MethodPost, "/postcardPreview") {
+	if !verifyRoute(w, r, http.MethodPost, "/postcards") {
+		return
+	}
+
+	query := r.URL.Query()
+	isPreview, errIsPreview := strconv.ParseBool(query.Get("isPreview"))
+	toRecurseId, errToRecurseId := strconv.Atoi(query.Get("toRecurseId"))
+	if errIsPreview != nil || errToRecurseId != nil {
+		// TODO default to isPreview = true?
+		log.Println("Missing or malformed query parameter")
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
@@ -173,8 +242,14 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 	_, err := authPersonalAccessToken(r)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
+
+		currentSession, err := getSession(r)
+		if err == nil && currentSession.isAuthenticated() {
+		} else {
+			log.Println(err)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 	}
 
 	// Parse our multipart form, 10 << 20 specifies a maximum
@@ -187,6 +262,7 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Error Retrieving the File")
 		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
@@ -196,13 +272,38 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
 
-	createPostCardResponse, err := lobClient.CreatePostCard(os.Getenv("LOB_TEST_ADDRESS_ID"), os.Getenv("LOB_TEST_ADDRESS_ID"), fileBytes)
+	rcAddressId, err := postgresClient.getLobAddressId(recurseCenterRecurseId)
+	if err != nil {
+		log.Printf("Error getting recurse address: %v\n", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	var recipientAddressId string
+	if !isPreview {
+		recipientAddressId, err = postgresClient.getLobAddressId(toRecurseId)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		recipientAddressId = rcAddressId
+	}
+
+	createPostCardResponse, err := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, isPreview)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
+	}
+
+	if !isPreview {
+		createPostCardResponse.Url = ""
 	}
 
 	resp, err := JSONMarshal(createPostCardResponse)

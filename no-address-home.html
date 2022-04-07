@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>rc-postcard</title>
+    <script type="text/javascript">
+        window.onload = function () {
+            const submitAddress = document.getElementById("submitAddress");
+            submitAddress.addEventListener('click', function () {
+                body = new URLSearchParams({
+                    "name": document.getElementById("name").value,
+                    "address1": document.getElementById("address1").value,
+                    "address2": document.getElementById("address2").value,
+                    "city": document.getElementById("city").value,
+                    "state": document.getElementById("state").value,
+                    "zip": document.getElementById("zip").value,
+                })
+
+                fetch("/addresses", { method: "POST", body: body }).then(response =>
+                    response.json()
+                ).then(data => {
+                    window.location.replace("http://localhost:8080/");
+                });
+            });
+        }
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: sans-serif;
+            color: #333333;
+        }
+
+        input {
+            display: block;
+            font-size: 1.05rem;
+            width: 100%;
+            padding: 10px;
+            border-radius: .25rem;
+            border: solid 1px #8c8c8c;
+            margin: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 1.1rem;
+            margin: 20px 0 5px 0;
+        }
+
+        input[type='submit'] {
+            background-color: #0594d8;
+            color: #ffffff;
+            border-color: #ffffff;
+            font-size: 1.1rem;
+            margin-top: 10px;
+            width: 100px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div>
+        <div>
+            <label for="name">Name</label>
+            <input id="name" name="name">
+        </div>
+        <div>
+            <label for="address1">Address 1</label>
+            <input id="address1" name="address1">
+        </div>
+        <div>
+            <label for="address2">Address 2</label>
+            <input id="address2" name="address2">
+        </div>
+        <div>
+            <label for="city">City</label>
+            <input id="city" name="city">
+        </div>
+        <div>
+            <label for="state">State</label>
+            <input id="state" name="state">
+        </div>
+        <div>
+            <label for="zip">Zip</label>
+            <input id="zip" name="zip">
+        </div>
+        <input id="submitAddress" type="submit" value="Submit">
+    </div>
+</body>
+
+</html>

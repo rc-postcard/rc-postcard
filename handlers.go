@@ -15,13 +15,17 @@ import (
 )
 
 type User struct {
-	Id       int    `json:"id"`
-	Username string `json:"slug"`
+	Id    int    `json:"id"`
+	Slug  string `json:"slug"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 //go:embed home.html
+//go:embed no-address-home.html
 var resources embed.FS
 var home = template.Must(template.ParseFS(resources, "home.html"))
+var noAddressHome = template.Must(template.ParseFS(resources, "no-address-home.html"))
 
 var (
 	// sessions stores user session information for browser login
@@ -72,12 +76,21 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if session, err := getSession(r); err != nil || !session.isAuthenticated() {
+	session, err := getSession(r)
+	if err != nil || !session.isAuthenticated() {
 		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 		return
 	}
 
+	lobAddressId, err := postgresClient.getLobAddressId(session.User.Id)
+	if err != nil || lobAddressId == "" {
+		// TODO refine for "not found scenario"
+		noAddressHome.Execute(w, nil)
+		return
+	}
+
 	home.Execute(w, nil)
+	return
 }
 
 // serveLogin serves the '/login' route for initializing the oauth flow.

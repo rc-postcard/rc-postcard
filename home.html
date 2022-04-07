@@ -2,15 +2,94 @@
 <html lang="en">
 
 <head>
-    <title>rc-postcar</title>
+    <title>rc-postcard</title>
     <script type="text/javascript">
-        window.onload = function () { }
+        window.onload = function () {
+            const addressButton = document.getElementById('addressButton');
+            const addressDiv = document.getElementById('addressDiv')
+            const submitPhotoButton = document.getElementById('submitPhoto');
+            const submitPostcardButton = document.getElementById('submitPostcard')
+            const recipientSelector = document.getElementById('recipientSelector')
+
+            fetch("/addresses").then(response => 
+                response.json()
+            ).then(data => {
+                document.getElementById("name").innerText = data["name"]
+                document.getElementById("address1").innerText = data["address_line1"]
+                document.getElementById("address2").innerText = data["address_line2"]
+                document.getElementById("city").innerText = data["address_city"]
+                document.getElementById("state").innerText = data["address_state"]
+                document.getElementById("zip").innerText = data["address_zip"]
+            })
+
+            fetch("/contacts").then(response => 
+                response.json()
+            ).then(data => {
+                contacts = data["contacts"]
+                contacts.forEach(contact => {
+                    var opt = document.createElement('option')
+                    opt.value = contact["recurseId"]
+                    opt.innerHTML = contact["name"] + " (" + contact["email"] + ")"
+                    recipientSelector.appendChild(opt)
+                });
+            })
+
+            addressButton.addEventListener('click', function () {
+                if (addressDiv.style.display === "none") {
+                    addressButton.innerText = "Hide my address 👻"
+                    addressDiv.style.display = "block";
+                } else {
+                    addressButton.innerText = "Show my address :)"
+                    addressDiv.style.display = "none";
+                }
+            })
+
+            submitPhotoButton.addEventListener('click', function () {
+                console.log("clicked")
+                let photo = document.getElementById("postcardFileInput").files[0]
+                if (!photo) {
+                    console.log("no photo")
+                    return;
+                }
+                let formData = new FormData()
+                formData.append("front-postcard-file", photo)
+                fetch("/postcards?isPreview=true&toRecurseId=0", { method: "POST", body: formData }).then(response =>
+                    response.json()
+                ).then(data => {
+                    pdfPreviewLink = document.getElementById("pdfPreviewLink")
+                    pdfPreviewLink.innerText = data['url']
+                    pdfPreviewLink.href = data['url']
+                })
+            });
+
+            submitPostcardButton.addEventListener('click', function () {
+                let photo = document.getElementById("postcardFileInput").files[0]
+                let recipientId = recipientSelector.value
+                if (!photo) {
+                    console.log("no photo")
+                    return
+                }
+                if (!recipientId) {
+                    console.log("no recipient")
+                    return
+                }
+
+                console.log("sending postcard to " + recipientId)
+                let formData = new FormData()
+                formData.append("front-postcard-file", photo)
+                fetch("/postcards?isPreview=false&toRecurseId=" + recipientId, {method: "POST", body: formData }).then(response => 
+                    response.json()
+                ).then(data => {
+                    console.log(data)
+                })
+            })
+        }
     </script>
     <style>
         * {
             box-sizing: border-box;
-            font-family: sans-serif;
             color: #333333;
+            font-family: "Comic Sans MS", "Comic Sans", cursive;
         }
 
         input {
@@ -29,7 +108,7 @@
             margin: 20px 0 5px 0;
         }
 
-        input[type='submit'] {
+        button {
             background-color: #0594d8;
             color: #ffffff;
             border-color: #ffffff;
@@ -38,43 +117,34 @@
             width: 100px;
         }
     </style>
-
-    <form action="/address" method="POST">
-        <div>
-            <label for="name">Name</label>
-            <input id="name" name="name">
-        </div>
-        <div>
-            <label for="address1">Address 1</label>
-            <input id="address1" name="address1">
-        </div>
-        <div>
-            <label for="address2">Address 2</label>
-            <input id="address2" name="address2">
-        </div>
-        <div>
-            <label for="city">City</label>
-            <input id="city" name="city">
-        </div>
-        <div>
-            <label for="state">State</label>
-            <input id="state" name="state">
-        </div>
-        <div>
-            <label for="zip">Zip</label>
-            <input id="zip" name="zip">
-        </div>
-        <input type="submit" value="Submit">
-    </form>
-
-    <form enctype="multipart/form-data" method="POST" name="fileinfo" action="/postcardPreview">
-        <input type="file" id="myFile" name="front-postcard-file">
-        <input type="submit">
-    </form>
 </head>
 
 <body>
-    Hello, world!
+    <button id="addressButton">Show my address :)</button>
+    <div style="display: none;" id="addressDiv">
+        <div id="name"></div>
+        <div id="address1"></div>
+        <div id="address2"></div>
+        <div id="city"></div>
+        <div id="state"></div>
+        <div id="zip"></div>
+    </div>
+    <input type="file" id="postcardFileInput" />
+    <button id="submitPhoto">Preview</button>
+    <div>
+        <label id="pdfPreviewLabel">PDF Preview (try refreshing a few times)</label>
+        <a target="_blank" id="pdfPreviewLink" href=""></a>
+    </div>
+    <div>
+        <label>Select who you'd like to send your postcard to. See someone in RC who's not on the list? Tell them to
+            sign up at LINK</label>
+        <select id="recipientSelector" name="Recipient" id="receipients">
+        </select>
+        <br><br>
+    </div>
+    <button id="submitPostcard">Looks good, submit!</button>
+
+    <div>Made with ❤️ at the Recurse Center.</div>
 </body>
 
 </html>
