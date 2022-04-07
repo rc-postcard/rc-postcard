@@ -20,3 +20,12 @@ Create an account on [lob.com](https://lob.com) and set your API keys in your en
 
 ## Other tools
 TODO: make tools to make postcard management easier
+
+
+## TODO
+- Session and token auth
+- PUT address - delete old, create new, updating mapping
+- SEND address
+- Send with payment
+- Get POSTCARD (see status)
+- Message on back of post card (comic sands)

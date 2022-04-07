@@ -16,9 +16,54 @@ var pacCache = map[string]*User{}
 func serveAddress(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		createAddress(w, r)
-	} else {
+	} else if r.Method == http.MethodDelete {
+		deleteAddress(w, r)
+	} else if r.Method == http.MethodGet {
 		getAddress(w, r)
+	} else {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
 	}
+}
+
+func deleteAddress(w http.ResponseWriter, r *http.Request) {
+	if !verifyRoute(w, r, http.MethodDelete, "/address") {
+		return
+	}
+
+	// authenticate and get userId from token
+	// TODO add support for session
+	user, err := authPersonalAccessToken(r)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	lobAddressId, err := getLobAddressId(user.Id)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "No address found that corresponds to this user.", http.StatusNotFound)
+		return
+	}
+
+	if err := lobClient.DeleteAddress(lobAddressId); err != nil {
+		log.Println(err)
+		http.Error(w, "Error deleting address", http.StatusInternalServerError)
+		return
+	}
+
+	// update postgres
+	if _, err = postgresClient.Exec(
+		"DELETE FROM user_info WHERE recurse_id = $1",
+		user.Id); err != nil {
+		log.Println(err)
+		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	return
 }
 
 func createAddress(w http.ResponseWriter, r *http.Request) {
@@ -90,10 +135,10 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var lobAddressId string
-	if err = postgresClient.QueryRow("SELECT lob_address_id FROM user_info WHERE recurse_id = $1", user.Id).Scan(&lobAddressId); err != nil {
-		log.Printf("QueryRow failed: %v\n", err)
-		http.Error(w, "Failed to get user from DB. Try creating/updating address", http.StatusNotFound) // TODO upadate err handling
+	lobAddressId, err := getLobAddressId(user.Id)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "No address found that corresponds to this user.", http.StatusNotFound)
 		return
 	}
 
