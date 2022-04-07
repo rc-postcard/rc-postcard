@@ -2,9 +2,23 @@
 <html lang="en">
 
 <head>
-    <title>rc-postcar</title>
+    <title>rc-postcard</title>
     <script type="text/javascript">
-        window.onload = function () { }
+        window.onload = function () { 
+            const submitPhotoButton = document.getElementById('submit');
+            console.log(submitPhotoButton);
+            submitPhotoButton.addEventListener('click', function() {
+                console.log("clicked")
+                let photo = document.getElementById("postcardFileInput").files[0]
+                let formData = new FormData()
+                formData.append("front-postcard-file", photo)
+                fetch("/postcardPreview", {method: "POST", body: formData}).then(data => 
+                    data.json()
+                ).then(response => {
+                    document.getElementById("x-y").innerText = response["url"]
+                })
+            });
+        }
     </script>
     <style>
         * {
@@ -29,52 +43,30 @@
             margin: 20px 0 5px 0;
         }
 
-        input[type='submit'] {
+        /* input[type='submit'] {
             background-color: #0594d8;
             color: #ffffff;
             border-color: #ffffff;
             font-size: 1.1rem;
             margin-top: 10px;
             width: 100px;
-        }
+        } */
     </style>
 
-    <form action="/address" method="POST">
-        <div>
-            <label for="name">Name</label>
-            <input id="name" name="name">
-        </div>
-        <div>
-            <label for="address1">Address 1</label>
-            <input id="address1" name="address1">
-        </div>
-        <div>
-            <label for="address2">Address 2</label>
-            <input id="address2" name="address2">
-        </div>
-        <div>
-            <label for="city">City</label>
-            <input id="city" name="city">
-        </div>
-        <div>
-            <label for="state">State</label>
-            <input id="state" name="state">
-        </div>
-        <div>
-            <label for="zip">Zip</label>
-            <input id="zip" name="zip">
-        </div>
-        <input type="submit" value="Submit">
-    </form>
+    
 
-    <form enctype="multipart/form-data" method="POST" name="fileinfo" action="/postcardPreview">
+    <!-- <form id="postcardPhotoForm"  onsubmit="event.preventDefault(); submitForm();">
         <input type="file" id="myFile" name="front-postcard-file">
         <input type="submit">
-    </form>
+    </form> -->
 </head>
 
 <body>
-    Hello, world!
+    <input type="file" id="postcardFileInput" />
+    <button id="submit">Submit</button>
+    <div>
+        <label id="x-y"></label>
+    </div>
 </body>
 
 </html>

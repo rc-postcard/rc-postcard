@@ -71,13 +71,21 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var user *User
 	// authenticate and get userId from token
 	// TODO add support for session
 	user, err := authPersonalAccessToken(r)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
+
+		currentSession, err := getSession(r)
+		if err == nil && currentSession.isAuthenticated() {
+			user = &currentSession.User
+		} else {
+			log.Println(err)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 	}
 
 	if err := r.ParseForm(); err != nil {
@@ -126,13 +134,21 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var user *User
 	// authenticate and get userId from token
 	// TODO add support for session
 	user, err := authPersonalAccessToken(r)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
+
+		currentSession, err := getSession(r)
+		if err == nil && currentSession.isAuthenticated() {
+			user = &currentSession.User
+		} else {
+			log.Println(err)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 	}
 
 	lobAddressId, err := getLobAddressId(user.Id)
@@ -150,7 +166,9 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := json.Marshal(getAddressResponse)
+	log.Println(getAddressResponse)
+
+	_, err = json.Marshal(getAddressResponse)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -159,7 +177,8 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(resp)
+	// w.Write(resp)
+	err = addressHTML.Execute(w, getAddressResponse)
 	return
 }
 
@@ -173,8 +192,14 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 	_, err := authPersonalAccessToken(r)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
+
+		currentSession, err := getSession(r)
+		if err == nil && currentSession.isAuthenticated() {
+		} else {
+			log.Println(err)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 	}
 
 	// Parse our multipart form, 10 << 20 specifies a maximum

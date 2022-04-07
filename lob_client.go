@@ -24,7 +24,6 @@ const addressesRoute = "addresses"
 const postcardsRoute = "postcards"
 
 type GetAddressResponse struct {
-	Url            string `json:"url"`
 	Name           string `json:"name"`
 	AddressLine1   string `json:"address_line1"`
 	AddressLine2   string `json:"address_line2"`
