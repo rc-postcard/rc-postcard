@@ -12,12 +12,11 @@
             fetch("/contacts").then(response => 
                 response.json()
             ).then(data => {
-                console.log(data)
-                recurseIds = data["recurseIds"]
-                recurseIds.forEach(recurseId => {
+                contacts = data["contacts"]
+                contacts.forEach(contact => {
                     var opt = document.createElement('option')
-                    opt.value = recurseId
-                    opt.innerHTML = recurseId
+                    opt.value = contact["recurseId"]
+                    opt.innerHTML = contact["name"] + " (" + contact["email"] + ")"
                     recipientSelector.appendChild(opt)
                 });
             })
