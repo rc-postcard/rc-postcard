@@ -46,7 +46,7 @@ func main() {
 	http.HandleFunc("/auth", serveAuth)
 	http.HandleFunc("/addresses", serveAddress)
 	http.HandleFunc("/postcards", servePostcardPreview)
-	http.HandleFunc("/contacts", serveContacts)
+	http.Handle("/contacts", authMiddleware(http.HandlerFunc(serveContacts)))
 
 	log.Printf("Running on port %s\n", *addr)
 

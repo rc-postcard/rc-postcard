@@ -28,21 +28,6 @@ func serveContacts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// authenticate and get userId from token
-	// TODO add support for session
-	_, err := authPersonalAccessToken(r)
-	if err != nil {
-		log.Println(err)
-
-		currentSession, err := getSession(r)
-		if err == nil && currentSession.isAuthenticated() {
-		} else {
-			log.Println(err)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-	}
-
 	contacts, err := postgresClient.getContacts()
 	if err != nil {
 		log.Println(err)
@@ -326,7 +311,7 @@ func authPersonalAccessToken(r *http.Request) (*User, error) {
 	// get token
 	pacToken := r.Header.Get("Authorization")
 	if pacToken == "" {
-		return nil, errors.New("missing authentication token")
+		return nil, errors.New("PAT_NOT_FOUND")
 	}
 	// check cache
 	if u, ok := pacCache[pacToken]; ok {
