@@ -34,6 +34,11 @@ type GetAddressResponse struct {
 	AddressCountry string `json:"address_country"`
 }
 
+type DeleteAddressResponse struct {
+	AddressId string `json:"id"`
+	Deleted   bool   `json:"deleted"`
+}
+
 type CreateAddressRequest struct {
 	Name         string `json:"name"`
 	AddressLine1 string `json:"address_line1"`
@@ -70,7 +75,7 @@ func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		panic(err)
+		return nil, err
 	}
 
 	// read body
@@ -80,6 +85,31 @@ func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
 		return nil, err
 	}
 	return &getAddressResponse, nil
+}
+
+func (*LobClient) DeleteAddress(lobAddressId string) error {
+	deleteAddressUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + addressesRoute + "/" + lobAddressId
+	req, err := http.NewRequest("DELETE", deleteAddressUrl, nil)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	var deleteAddressResponse DeleteAddressResponse
+	if err := json.NewDecoder(resp.Body).Decode(&deleteAddressResponse); err != nil {
+		log.Println(err)
+		return err
+	}
+	fmt.Println(deleteAddressResponse)
+
+	return nil
 }
 
 func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string) (*CreateAddressResponse, error) {

@@ -25,3 +25,13 @@ func setupPostgresConnection() error {
 	_, err = postgresClient.Exec("CREATE TABLE IF NOT EXISTS user_info (recurse_id int UNIQUE NOT NULL, lob_address_id text UNIQUE NOT NULL)")
 	return err
 }
+
+func getLobAddressId(recurseId int) (string, error) {
+	var lobAddressId string
+	if err := postgresClient.QueryRow("SELECT lob_address_id FROM user_info WHERE recurse_id = $1", recurseId).Scan(&lobAddressId); err != nil {
+		log.Printf("QueryRow failed: %v\n", err)
+		return "", err
+	}
+
+	return lobAddressId, nil
+}
