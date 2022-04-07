@@ -13,6 +13,51 @@ import (
 // pacCache is a personal access token cache used by the /tile API
 var pacCache = map[string]*User{}
 
+type ContactsResponse struct {
+	RecurseIds []int `json:"recurseIds"`
+}
+
+func serveContacts(w http.ResponseWriter, r *http.Request) {
+	if !verifyRoute(w, r, http.MethodGet, "/contacts") {
+		return
+	}
+
+	// authenticate and get userId from token
+	// TODO add support for session
+	_, err := authPersonalAccessToken(r)
+	if err != nil {
+		log.Println(err)
+
+		currentSession, err := getSession(r)
+		if err == nil && currentSession.isAuthenticated() {
+		} else {
+			log.Println(err)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	recurseIds, err := getRecurseIds()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Error getting contacts from db", http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := JSONMarshal(ContactsResponse{RecurseIds: recurseIds})
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
+	return
+
+}
+
 func serveAddress(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		createAddress(w, r)

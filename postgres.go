@@ -35,3 +35,30 @@ func getLobAddressId(recurseId int) (string, error) {
 
 	return lobAddressId, nil
 }
+
+func getRecurseIds() ([]int, error) {
+	var recurseIds []int
+	rows, err := postgresClient.Query("SELECT recurse_id FROM user_info")
+	if err != nil {
+		log.Printf("QueryRow failed: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var recurseId int
+		err := rows.Scan(&recurseId)
+		if err != nil {
+			log.Printf("Reading row failed: %v\n", err)
+			return nil, err
+		}
+		recurseIds = append(recurseIds, recurseId)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		log.Printf("Iterating row failed: %v\n", err)
+		return nil, err
+	}
+
+	return recurseIds, nil
+}
