@@ -9,6 +9,19 @@
             const submitPostcardButton = document.getElementById('submitPostcard')
             const recipientSelector = document.getElementById('recipientSelector')
 
+            fetch("/contacts").then(response => 
+                response.json()
+            ).then(data => {
+                console.log(data)
+                recurseIds = data["recurseIds"]
+                recurseIds.forEach(recurseId => {
+                    var opt = document.createElement('option')
+                    opt.value = recurseId
+                    opt.innerHTML = recurseId
+                    recipientSelector.appendChild(opt)
+                });
+            })
+
             submitPhotoButton.addEventListener('click', function () {
                 console.log("clicked")
                 let photo = document.getElementById("postcardFileInput").files[0]
@@ -95,8 +108,8 @@
         <label>Select who you'd like to send your postcard to. See someone in RC who's not on the list? Tell them to
             sign up at LINK</label>
         <select id="recipientSelector" name="Recipient" id="receipients">
-            <option value="recurse_center_id">Recurse Center</option>
-            <option value="recurse_id">Joseph Tobin</option>
+            <!-- <option value="recurse_center_id">Recurse Center</option>
+            <option value="recurse_id">Joseph Tobin</option> -->
         </select>
         <br><br>
     </div>

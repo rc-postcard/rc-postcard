@@ -15,8 +15,10 @@ import (
 )
 
 type User struct {
-	Id       int    `json:"id"`
-	Username string `json:"slug"`
+	Id    int    `json:"id"`
+	Slug  string `json:"slug"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 //go:embed home.html
@@ -82,7 +84,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lobAddressId, err := getLobAddressId(session.User.Id)
+	lobAddressId, err := postgresClient.getLobAddressId(session.User.Id)
 	if err != nil || lobAddressId == "" {
 		// TODO refine for "not found scenario"
 		noAddressHome.Execute(w, nil)

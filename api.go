@@ -37,7 +37,7 @@ func serveContacts(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	recurseIds, err := getRecurseIds()
+	recurseIds, err := postgresClient.getRecurseIds()
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Error getting contacts from db", http.StatusInternalServerError)
@@ -85,7 +85,7 @@ func deleteAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lobAddressId, err := getLobAddressId(user.Id)
+	lobAddressId, err := postgresClient.getLobAddressId(user.Id)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "No address found that corresponds to this user.", http.StatusNotFound)
@@ -98,13 +98,9 @@ func deleteAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// update postgres
-	if _, err = postgresClient.Exec(
-		"DELETE FROM user_info WHERE recurse_id = $1",
-		user.Id); err != nil {
+	if err = postgresClient.deleteUser(user.Id); err != nil {
 		log.Println(err)
 		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
-		return
 	}
 
 	w.WriteHeader(http.StatusAccepted)
@@ -149,11 +145,7 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// update postgres
-	if _, err = postgresClient.Exec(
-		"INSERT INTO user_info (recurse_id, lob_address_id) VALUES ($1, $2) ON CONFLICT (recurse_id) DO UPDATE SET lob_address_id = excluded.lob_address_id",
-		user.Id,
-		createAddressResponse.AddressId); err != nil {
+	if err = postgresClient.insertUser(user.Id, createAddressResponse.AddressId, user.Name, user.Email); err != nil {
 		log.Println(err)
 		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
 		return
@@ -196,7 +188,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	lobAddressId, err := getLobAddressId(user.Id)
+	lobAddressId, err := postgresClient.getLobAddressId(user.Id)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "No address found that corresponds to this user.", http.StatusNotFound)

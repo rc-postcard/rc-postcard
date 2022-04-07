@@ -35,11 +35,11 @@ func main() {
 	}
 
 	// setup postgres connection
-	if err := setupPostgresConnection(); err != nil {
+	if err := postgresClient.setupPostgresConnection(); err != nil {
 		log.Println("Error setting up postgres:", err)
 		os.Exit(1)
 	}
-	defer postgresClient.Close()
+	defer db.Close()
 
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/login", serveLogin)
