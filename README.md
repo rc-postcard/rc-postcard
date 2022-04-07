@@ -31,3 +31,4 @@ TODO: make tools to make postcard management easier
 - Message on back of post card (comic sands)
 - Add metadata to address
 - Add middleware
+- Add scripts to make processing easier
