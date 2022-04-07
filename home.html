@@ -4,20 +4,50 @@
 <head>
     <title>rc-postcard</title>
     <script type="text/javascript">
-        window.onload = function () { 
-            const submitPhotoButton = document.getElementById('submit');
-            console.log(submitPhotoButton);
-            submitPhotoButton.addEventListener('click', function() {
+        window.onload = function () {
+            const submitPhotoButton = document.getElementById('submitPhoto');
+            const submitPostcardButton = document.getElementById('submitPostcard')
+            const recipientSelector = document.getElementById('recipientSelector')
+
+            submitPhotoButton.addEventListener('click', function () {
                 console.log("clicked")
                 let photo = document.getElementById("postcardFileInput").files[0]
+                if (!photo) {
+                    console.log("no photo")
+                    return;
+                }
                 let formData = new FormData()
                 formData.append("front-postcard-file", photo)
-                fetch("/postcardPreview", {method: "POST", body: formData}).then(data => 
-                    data.json()
-                ).then(response => {
-                    document.getElementById("x-y").innerText = response["url"]
+                fetch("/postcardPreview", { method: "POST", body: formData }).then(response =>
+                    response.json()
+                ).then(data => {
+                    pdfPreviewLink = document.getElementById("pdfPreviewLink")
+                    pdfPreviewLink.innerText = data['url']
+                    pdfPreviewLink.href = data['url']
                 })
             });
+
+            submitPostcardButton.addEventListener('click', function () {
+                let photo = document.getElementById("postcardFileInput").files[0]
+                if (!photo) {
+                    console.log("no photo")
+                    return
+                }
+                if (!recipientSelector.value) {
+                    console.log("no recipient")
+                    return
+                }
+
+                console.log("sending postcard")
+
+                // fetch("/postcard", { method: "POST", body: formData }).then(response =>
+                //     response.json()
+                // ).then(data => {
+                //     pdfPreviewLink = document.getElementById("pdfPreviewLink")
+                //     pdfPreviewLink.innerText = data['url']
+                //     pdfPreviewLink.href = data['url']
+                // })
+            })
         }
     </script>
     <style>
@@ -43,30 +73,34 @@
             margin: 20px 0 5px 0;
         }
 
-        /* input[type='submit'] {
+        button {
             background-color: #0594d8;
             color: #ffffff;
             border-color: #ffffff;
             font-size: 1.1rem;
             margin-top: 10px;
             width: 100px;
-        } */
+        }
     </style>
-
-    
-
-    <!-- <form id="postcardPhotoForm"  onsubmit="event.preventDefault(); submitForm();">
-        <input type="file" id="myFile" name="front-postcard-file">
-        <input type="submit">
-    </form> -->
 </head>
 
 <body>
     <input type="file" id="postcardFileInput" />
-    <button id="submit">Submit</button>
+    <button id="submitPhoto">Submit</button>
     <div>
-        <label id="x-y"></label>
+        <label id="pdfPreviewLabel">PDF Preview (try refreshing a few times)</label>
+        <a id="pdfPreviewLink" href=""></a>
     </div>
+    <div>
+        <label>Select who you'd like to send your postcard to. See someone in RC who's not on the list? Tell them to
+            sign up at LINK</label>
+        <select id="recipientSelector" name="Recipient" id="receipients">
+            <option value="recurse_center_id">Recurse Center</option>
+            <option value="recurse_id">Joseph Tobin</option>
+        </select>
+        <br><br>
+    </div>
+    <button id="submitPostcard">Looks good, submit!</button>
 </body>
 
 </html>
