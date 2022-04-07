@@ -13,8 +13,14 @@ import (
 // pacCache is a personal access token cache used by the /tile API
 var pacCache = map[string]*User{}
 
+type Contact struct {
+	RecurseId int    `json:"recurseId"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+}
+
 type ContactsResponse struct {
-	RecurseIds []int `json:"recurseIds"`
+	Contacts []*Contact `json:"contacts"`
 }
 
 func serveContacts(w http.ResponseWriter, r *http.Request) {
@@ -37,14 +43,14 @@ func serveContacts(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	recurseIds, err := postgresClient.getRecurseIds()
+	contacts, err := postgresClient.getContacts()
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Error getting contacts from db", http.StatusInternalServerError)
 		return
 	}
 
-	resp, err := JSONMarshal(ContactsResponse{RecurseIds: recurseIds})
+	resp, err := JSONMarshal(ContactsResponse{Contacts: contacts})
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

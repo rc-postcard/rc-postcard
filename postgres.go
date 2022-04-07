@@ -40,23 +40,23 @@ func (*PostgresClient) getLobAddressId(recurseId int) (string, error) {
 
 	return lobAddressId, nil
 }
-func (*PostgresClient) getRecurseIds() ([]int, error) {
+func (*PostgresClient) getContacts() ([]*Contact, error) {
 
-	var recurseIds []int
-	rows, err := db.Query("SELECT recurse_id FROM user_info")
+	var contacts []*Contact
+	rows, err := db.Query("SELECT recurse_id, user_name, user_email FROM user_info")
 	if err != nil {
 		log.Printf("QueryRow failed: %v\n", err)
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var recurseId int
-		err := rows.Scan(&recurseId)
+		contact := new(Contact)
+		err := rows.Scan(&contact.RecurseId, &contact.Name, &contact.Email)
 		if err != nil {
 			log.Printf("Reading row failed: %v\n", err)
 			return nil, err
 		}
-		recurseIds = append(recurseIds, recurseId)
+		contacts = append(contacts, contact)
 	}
 
 	err = rows.Err()
@@ -65,7 +65,7 @@ func (*PostgresClient) getRecurseIds() ([]int, error) {
 		return nil, err
 	}
 
-	return recurseIds, nil
+	return contacts, nil
 }
 
 func (*PostgresClient) insertUser(recurseId int, lobAddressId, userName, userEmail string) error {
