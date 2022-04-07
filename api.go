@@ -209,9 +209,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(getAddressResponse)
-
-	_, err = json.Marshal(getAddressResponse)
+	resp, err := json.Marshal(getAddressResponse)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -220,8 +218,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	// w.Write(resp)
-	err = addressHTML.Execute(w, getAddressResponse)
+	w.Write(resp)
 	return
 }
 
@@ -254,7 +251,6 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	log.Println("Token validated")
 
 	// Parse our multipart form, 10 << 20 specifies a maximum
 	// upload of 10 MB files.
@@ -280,7 +276,6 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("file read")
 	rcAddressId, err := postgresClient.getLobAddressId(recurseCenterRecurseId)
 	if err != nil {
 		log.Printf("Error getting recurse address: %v\n", err)
@@ -288,7 +283,6 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(rcAddressId)
 	var recipientAddressId string
 	if !isPreview {
 		recipientAddressId, err = postgresClient.getLobAddressId(toRecurseId)
@@ -301,9 +295,6 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 		recipientAddressId = rcAddressId
 	}
 
-	log.Println(recipientAddressId)
-	log.Println(len(recipientAddressId))
-	log.Println(len(rcAddressId))
 	createPostCardResponse, err := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, isPreview)
 	if err != nil {
 		log.Println(err)
@@ -311,7 +302,10 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(createPostCardResponse)
+	if !isPreview {
+		createPostCardResponse.Url = ""
+	}
+
 	resp, err := JSONMarshal(createPostCardResponse)
 	if err != nil {
 		log.Println(err)

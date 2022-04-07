@@ -22,12 +22,10 @@ type User struct {
 }
 
 //go:embed home.html
-//go:embed address.gohtml
 //go:embed no-address-home.html
 var resources embed.FS
 var home = template.Must(template.ParseFS(resources, "home.html"))
 var noAddressHome = template.Must(template.ParseFS(resources, "no-address-home.html"))
-var addressHTML = template.Must(template.ParseFS(resources, "address.gohtml"))
 
 var (
 	// sessions stores user session information for browser login

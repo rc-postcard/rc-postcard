@@ -73,7 +73,7 @@ func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return nil, err
 	}
 
@@ -97,7 +97,7 @@ func (*LobClient) DeleteAddress(lobAddressId string) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 
@@ -106,7 +106,7 @@ func (*LobClient) DeleteAddress(lobAddressId string) error {
 		log.Println(err)
 		return err
 	}
-	fmt.Println(deleteAddressResponse)
+	log.Println(deleteAddressResponse)
 
 	return nil
 }
@@ -177,11 +177,16 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 	var authHeader string
 	if isPreview {
-		authHeader = fmt.Sprintf("Basic %s:", base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY"))))
+		authHeader = fmt.Sprintf("Basic %s",
+			base64.StdEncoding.EncodeToString(
+				[]byte(fmt.Sprintf("%s:", os.Getenv("LOB_API_TEST_KEY")))))
 	} else {
-		authHeader = fmt.Sprintf("Basic %s:", base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_LIVE_KEY"))))
+		authHeader = fmt.Sprintf("Basic %s",
+			base64.StdEncoding.EncodeToString(
+				[]byte(fmt.Sprintf("%s:", os.Getenv("LOB_API_TEST_KEY")))))
 	}
 	req.Header.Set("Authorization", authHeader)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println(err)
@@ -198,10 +203,11 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 	}
 
 	// TODO pull
-	fmt.Println(resp.StatusCode)
+	log.Println(resp.StatusCode)
 	b, err := httputil.DumpResponse(resp, true)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return nil, err
 	}
 
 	log.Println(string(b))
