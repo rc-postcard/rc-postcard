@@ -8,6 +8,8 @@ import (
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
+const recurseCenterRecurseId = 0
+
 type PostgresClient struct {
 }
 

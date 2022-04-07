@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
+	"strconv"
 )
 
 // pacCache is a personal access token cache used by the /tile API
@@ -78,7 +78,7 @@ func serveAddress(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteAddress(w http.ResponseWriter, r *http.Request) {
-	if !verifyRoute(w, r, http.MethodDelete, "/address") {
+	if !verifyRoute(w, r, http.MethodDelete, "/addresses") {
 		return
 	}
 
@@ -114,7 +114,7 @@ func deleteAddress(w http.ResponseWriter, r *http.Request) {
 }
 
 func createAddress(w http.ResponseWriter, r *http.Request) {
-	if !verifyRoute(w, r, http.MethodPost, "/address") {
+	if !verifyRoute(w, r, http.MethodPost, "/addresses") {
 		return
 	}
 
@@ -173,7 +173,7 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAddress(w http.ResponseWriter, r *http.Request) {
-	if !verifyRoute(w, r, http.MethodGet, "/address") {
+	if !verifyRoute(w, r, http.MethodGet, "/addresses") {
 		return
 	}
 
@@ -226,7 +226,17 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 }
 
 func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
-	if !verifyRoute(w, r, http.MethodPost, "/postcardPreview") {
+	if !verifyRoute(w, r, http.MethodPost, "/postcards") {
+		return
+	}
+
+	query := r.URL.Query()
+	isPreview, errIsPreview := strconv.ParseBool(query.Get("isPreview"))
+	toRecurseId, errToRecurseId := strconv.Atoi(query.Get("toRecurseId"))
+	if errIsPreview != nil || errToRecurseId != nil {
+		// TODO default to isPreview = true?
+		log.Println("Missing or malformed query parameter")
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
@@ -244,6 +254,7 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	log.Println("Token validated")
 
 	// Parse our multipart form, 10 << 20 specifies a maximum
 	// upload of 10 MB files.
@@ -255,6 +266,7 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Error Retrieving the File")
 		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
@@ -264,15 +276,42 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
 
-	createPostCardResponse, err := lobClient.CreatePostCard(os.Getenv("LOB_TEST_ADDRESS_ID"), os.Getenv("LOB_TEST_ADDRESS_ID"), fileBytes)
+	log.Println("file read")
+	rcAddressId, err := postgresClient.getLobAddressId(recurseCenterRecurseId)
+	if err != nil {
+		log.Printf("Error getting recurse address: %v\n", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println(rcAddressId)
+	var recipientAddressId string
+	if !isPreview {
+		recipientAddressId, err = postgresClient.getLobAddressId(toRecurseId)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		recipientAddressId = rcAddressId
+	}
+
+	log.Println(recipientAddressId)
+	log.Println(len(recipientAddressId))
+	log.Println(len(rcAddressId))
+	createPostCardResponse, err := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
+	log.Println(createPostCardResponse)
 	resp, err := JSONMarshal(createPostCardResponse)
 	if err != nil {
 		log.Println(err)

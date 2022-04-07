@@ -153,7 +153,7 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte) (*CreatePostcardResponse, error) {
+func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, isPreview bool) (*CreatePostcardResponse, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -175,7 +175,13 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 		return nil, err
 	}
 	req.Header.Add("Content-Type", writer.FormDataContentType())
-	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+	var authHeader string
+	if isPreview {
+		authHeader = fmt.Sprintf("Basic %s:", base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY"))))
+	} else {
+		authHeader = fmt.Sprintf("Basic %s:", base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_LIVE_KEY"))))
+	}
+	req.Header.Set("Authorization", authHeader)
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println(err)

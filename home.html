@@ -5,6 +5,7 @@
     <title>rc-postcard</title>
     <script type="text/javascript">
         window.onload = function () {
+            const addressButton = document.getElementById('addressButton');
             const submitPhotoButton = document.getElementById('submitPhoto');
             const submitPostcardButton = document.getElementById('submitPostcard')
             const recipientSelector = document.getElementById('recipientSelector')
@@ -21,6 +22,10 @@
                 });
             })
 
+            addressButton.addEventListener('click', function() {
+                window.location.replace("/addresses")
+            })
+
             submitPhotoButton.addEventListener('click', function () {
                 console.log("clicked")
                 let photo = document.getElementById("postcardFileInput").files[0]
@@ -30,7 +35,7 @@
                 }
                 let formData = new FormData()
                 formData.append("front-postcard-file", photo)
-                fetch("/postcardPreview", { method: "POST", body: formData }).then(response =>
+                fetch("/postcards?isPreview=true&toRecurseId=0", { method: "POST", body: formData }).then(response =>
                     response.json()
                 ).then(data => {
                     pdfPreviewLink = document.getElementById("pdfPreviewLink")
@@ -41,16 +46,24 @@
 
             submitPostcardButton.addEventListener('click', function () {
                 let photo = document.getElementById("postcardFileInput").files[0]
+                let recipientId = recipientSelector.value
                 if (!photo) {
                     console.log("no photo")
                     return
                 }
-                if (!recipientSelector.value) {
+                if (!recipientId) {
                     console.log("no recipient")
                     return
                 }
 
-                console.log("sending postcard")
+                console.log("sending postcard to " + recipientId)
+                let formData = new FormData()
+                formData.append("front-postcard-file", photo)
+                fetch("/postcards?isPreview=false&toRecurseId=" + recipientId, {method: "POST", body: formData }).then(response => 
+                    response.json()
+                ).then(data => {
+                    console.log(data)
+                })
             })
         }
     </script>
@@ -89,11 +102,12 @@
 </head>
 
 <body>
+    <button id="addressButton">Go to my address :)</button>
     <input type="file" id="postcardFileInput" />
     <button id="submitPhoto">Preview</button>
     <div>
         <label id="pdfPreviewLabel">PDF Preview (try refreshing a few times)</label>
-        <a id="pdfPreviewLink" href=""></a>
+        <a target="_blank" id="pdfPreviewLink" href=""></a>
     </div>
     <div>
         <label>Select who you'd like to send your postcard to. See someone in RC who's not on the list? Tell them to
