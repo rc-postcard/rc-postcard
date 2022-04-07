@@ -4,7 +4,25 @@
 <head>
     <title>rc-postcard</title>
     <script type="text/javascript">
-        window.onload = function () { }
+        window.onload = function () {
+            const submitAddress = document.getElementById("submitAddress");
+            submitAddress.addEventListener('click', function () {
+                body = new URLSearchParams({
+                    "name": document.getElementById("name").value,
+                    "address1": document.getElementById("address1").value,
+                    "address2": document.getElementById("address2").value,
+                    "city": document.getElementById("city").value,
+                    "state": document.getElementById("state").value,
+                    "zip": document.getElementById("zip").value,
+                })
+
+                fetch("/addresses", { method: "POST", body: body }).then(response =>
+                    response.json()
+                ).then(data => {
+                    window.location.replace("http://localhost:8080/");
+                });
+            });
+        }
     </script>
     <style>
         * {
@@ -39,7 +57,10 @@
         }
     </style>
 
-    <form action="/addresses" method="POST">
+</head>
+
+<body>
+    <div>
         <div>
             <label for="name">Name</label>
             <input id="name" name="name">
@@ -64,13 +85,8 @@
             <label for="zip">Zip</label>
             <input id="zip" name="zip">
         </div>
-        <input type="submit" value="Submit">
-    </form>
-
-</head>
-
-<body>
-    Hello, world!
+        <input id="submitAddress" type="submit" value="Submit">
+    </div>
 </body>
 
 </html>
