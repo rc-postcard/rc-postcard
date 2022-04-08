@@ -10,6 +10,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 type LobClient struct {
@@ -37,13 +38,18 @@ type DeleteAddressResponse struct {
 	Deleted   bool   `json:"deleted"`
 }
 
+type CreateAddressRequestMetadata struct {
+	RCId string `json:"rcid"`
+}
+
 type CreateAddressRequest struct {
-	Name         string `json:"name"`
-	AddressLine1 string `json:"address_line1"`
-	AddressLine2 string `json:"address_line2"`
-	AddressCity  string `json:"address_city"`
-	AddressState string `json:"address_state"`
-	AddressZip   string `json:"address_zip"`
+	Name         string                       `json:"name"`
+	AddressLine1 string                       `json:"address_line1"`
+	AddressLine2 string                       `json:"address_line2"`
+	AddressCity  string                       `json:"address_city"`
+	AddressState string                       `json:"address_state"`
+	AddressZip   string                       `json:"address_zip"`
+	Metadata     CreateAddressRequestMetadata `json:"metadata"`
 }
 
 type CreateAddressResponse struct {
@@ -121,7 +127,7 @@ func (*LobClient) DeleteAddress(lobAddressId string) error {
 	return nil
 }
 
-func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string) (*CreateAddressResponse, error) {
+func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string, rcId int) (*CreateAddressResponse, error) {
 	createAddressRequest := &CreateAddressRequest{
 		Name:         name,
 		AddressLine1: addressLine1,
@@ -129,6 +135,7 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 		AddressCity:  city,
 		AddressState: state,
 		AddressZip:   zipCode,
+		Metadata:     CreateAddressRequestMetadata{RCId: strconv.Itoa(rcId)},
 	}
 
 	marshalledCreateAddressRequest, err := json.Marshal(createAddressRequest)
