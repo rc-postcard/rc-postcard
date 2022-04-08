@@ -83,7 +83,7 @@ type CreatePostcardMetadata struct {
 }
 
 func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
-	getAddressUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + addressesRoute + "/" + lobAddressId
+	getAddressUrl := fmt.Sprintf("%s/%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute, lobAddressId)
 	req, err := http.NewRequest("GET", getAddressUrl, nil)
 	if err != nil {
 		log.Println(err)
@@ -108,7 +108,7 @@ func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
 }
 
 func (*LobClient) DeleteAddress(lobAddressId string) error {
-	deleteAddressUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + addressesRoute + "/" + lobAddressId
+	deleteAddressUrl := fmt.Sprintf("%s/%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute, lobAddressId)
 	req, err := http.NewRequest("DELETE", deleteAddressUrl, nil)
 	if err != nil {
 		log.Println(err)
@@ -149,7 +149,7 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 		return nil, err
 	}
 
-	createAddressUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + addressesRoute
+	createAddressUrl := fmt.Sprintf("%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute)
 	req, err := http.NewRequest("POST", createAddressUrl, bytes.NewBuffer(marshalledCreateAddressRequest))
 	if err != nil {
 		log.Println(err)
@@ -209,8 +209,7 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 
 	writer.Close()
 
-	// TODO update with formatting
-	postPostcardUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + postcardsRoute
+	postPostcardUrl := fmt.Sprintf("%s/%s/%s", lobAddressBaseUrl, lobVersion, postcardsRoute)
 	req, err := http.NewRequest("POST", postPostcardUrl, body)
 	if err != nil {
 		return nil, &LobError{Err: err}
