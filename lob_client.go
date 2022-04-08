@@ -82,12 +82,41 @@ type CreatePostcardMetadata struct {
 	FromRcId string `json:"from_rc_id"`
 }
 
+type GetPostcardsResponse struct {
+}
+
+func (*LobClient) GetPostcards(recipientRecurseId int) (*GetPostcardsResponse, error) {
+	getPostcardsUrl := fmt.Sprintf("%s/%s/%s?metadata[to_rc_id]=%d", lobAddressBaseUrl, lobVersion, postcardsRoute, recipientRecurseId)
+	req, err := http.NewRequest("GET", getPostcardsUrl, nil)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	bodyString := string(bodyBytes)
+	log.Println(bodyString)
+
+	return nil, nil
+}
+
 func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
 	getAddressUrl := fmt.Sprintf("%s/%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute, lobAddressId)
 	req, err := http.NewRequest("GET", getAddressUrl, nil)
 	if err != nil {
 		log.Println(err)
-		panic(err)
+		return nil, err
 	}
 
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
