@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -222,14 +221,7 @@ func servePostcard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createPostCardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, isPreview)
-<<<<<<< HEAD
-	if lobError != nil {
-=======
-	fmt.Println("RESPONSE")
-	fmt.Println(createPostCardResponse)
-	fmt.Println(lobError)
 	if lobError != nil && (lobError.Err != nil || lobError.StatusCode/100 >= 5) {
->>>>>>> a0bce790fad64f995db220088385b2ee36127efc
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
