@@ -39,7 +39,7 @@ type DeleteAddressResponse struct {
 }
 
 type CreateAddressRequestMetadata struct {
-	RCId string `json:"rcid"`
+	RCId string `json:"rc_id"`
 }
 
 type CreateAddressRequest struct {
@@ -75,6 +75,11 @@ type LobError struct {
 
 type LobErrorResponse struct {
 	LobError LobError `json:"error"`
+}
+
+type CreatePostcardMetadata struct {
+	ToRcId   string `json:"to_rc_id"`
+	FromRcId string `json:"from_rc_id"`
 }
 
 func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
@@ -170,7 +175,7 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, isPreview bool) (*CreatePostcardResponse, *LobError) {
+func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, isPreview bool, fromRcId, toRcId int) (*CreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -183,6 +188,24 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 	_ = writer.WriteField("back", back)
 	_ = writer.WriteField("to", toLobAddressId)
 	_ = writer.WriteField("from", fromLobAddressId)
+
+	postcardMetadata, err := json.Marshal(CreatePostcardMetadata{FromRcId: strconv.Itoa(fromRcId), ToRcId: strconv.Itoa(toRcId)})
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
+
+	metadataPart, err := writer.CreateFormField("metadata")
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
+
+	_, err = metadataPart.Write(postcardMetadata)
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
 
 	writer.Close()
 
