@@ -8,7 +8,7 @@ build: $(BIN)
 run: $(BIN)
 	./$<
 
-$(BIN): $(SRC) go.mod go.sum home.html no-address-home.html
+$(BIN): $(SRC) go.mod go.sum home.html no-address-home.html back-of-4x6-postcard-1.html
 	$(GO) build
 
 clean:
