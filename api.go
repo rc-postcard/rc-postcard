@@ -221,17 +221,28 @@ func servePostcard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createPostCardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, isPreview)
-	if lobError != nil {
+	var resp []byte
+	statusCodeCategory := lobError.StatusCode / 100
+	if lobError.Err != nil || statusCodeCategory >= 5 {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
+	} else if statusCodeCategory == 3 || statusCodeCategory == 4 {
+		resp, err = JSONMarshal(lobError)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(lobError.StatusCode)
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(resp)
+			return
+		}
 	}
 
 	if !isPreview {
 		createPostCardResponse.Url = ""
 	}
+	resp, err = JSONMarshal(createPostCardResponse)
 
-	resp, err := JSONMarshal(createPostCardResponse)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
