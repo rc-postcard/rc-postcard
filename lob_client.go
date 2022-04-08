@@ -83,6 +83,18 @@ type CreatePostcardMetadata struct {
 }
 
 type GetPostcardsResponse struct {
+	Data []Postcard `json:"data"`
+}
+
+type Metadata struct {
+	ToRcId   string `json:"to_rc_id"`
+	FromRcId string `json:"from_rc_id"`
+}
+
+type Postcard struct {
+	Id       string   `json:"id"`
+	Url      string   `json:"url"`
+	Metadata Metadata `json:"metadata"`
 }
 
 func (*LobClient) GetPostcards(recipientRecurseId int) (*GetPostcardsResponse, error) {
@@ -101,14 +113,13 @@ func (*LobClient) GetPostcards(recipientRecurseId int) (*GetPostcardsResponse, e
 		return nil, err
 	}
 
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
+	var getPostcardsResponse GetPostcardsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&getPostcardsResponse); err != nil {
+		log.Println(err)
+		return nil, err
 	}
-	bodyString := string(bodyBytes)
-	log.Println(bodyString)
 
-	return nil, nil
+	return &getPostcardsResponse, nil
 }
 
 func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
