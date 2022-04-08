@@ -6,12 +6,13 @@
     <script type="text/javascript">
         window.onload = function () {
             const addressButton = document.getElementById('addressButton');
+            const deleteAddressButton = document.getElementById('deleteAddressButton');
             const addressDiv = document.getElementById('addressDiv')
             const submitPhotoButton = document.getElementById('submitPhoto');
             const submitPostcardButton = document.getElementById('submitPostcard')
             const recipientSelector = document.getElementById('recipientSelector')
 
-            fetch("/addresses").then(response => 
+            fetch("/addresses").then(response =>
                 response.json()
             ).then(data => {
                 document.getElementById("name").innerText = data["name"]
@@ -22,7 +23,7 @@
                 document.getElementById("zip").innerText = data["address_zip"]
             })
 
-            fetch("/contacts").then(response => 
+            fetch("/contacts").then(response =>
                 response.json()
             ).then(data => {
                 contacts = data["contacts"]
@@ -77,11 +78,19 @@
                 console.log("sending postcard to " + recipientId)
                 let formData = new FormData()
                 formData.append("front-postcard-file", photo)
-                fetch("/postcards?isPreview=false&toRecurseId=" + recipientId, {method: "POST", body: formData }).then(response => 
+                fetch("/postcards?isPreview=false&toRecurseId=" + recipientId, { method: "POST", body: formData }).then(response =>
                     response.json()
                 ).then(data => {
                     console.log(data)
                 })
+            })
+
+            deleteAddressButton.addEventListener('click', function () {
+                fetch("/addresses", { method: "DELETE" }).then(response => {
+                    console.log(response)
+                    window.location.replace("http://localhost:8080/");
+                    return;
+                });
             })
         }
     </script>
@@ -128,6 +137,7 @@
         <div id="city"></div>
         <div id="state"></div>
         <div id="zip"></div>
+        <button id="deleteAddressButton">Delete my address 😢</button>
     </div>
     <input type="file" id="postcardFileInput" />
     <button id="submitPhoto">Preview</button>

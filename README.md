@@ -23,7 +23,6 @@ TODO: make tools to make postcard management easier
 
 
 ## TODO
-- PUT address - delete old, create new, updating mapping
 - SEND address
 - Send with payment
 - Get POSTCARD (see status)

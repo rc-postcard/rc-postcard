@@ -86,7 +86,7 @@ func deleteAddress(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
 	}
 
-	w.WriteHeader(http.StatusAccepted)
+	w.WriteHeader(http.StatusOK)
 	return
 }
 
