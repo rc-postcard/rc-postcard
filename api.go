@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -67,14 +66,7 @@ func deleteAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// authenticate and get userId from token
-	// TODO add support for session
-	user, err := authPersonalAccessToken(r)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	var user *User = r.Context().Value(userContextKey).(*User)
 
 	lobAddressId, err := postgresClient.getLobAddressId(user.Id)
 	if err != nil {
@@ -103,22 +95,7 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user *User
-	// authenticate and get userId from token
-	// TODO add support for session
-	user, err := authPersonalAccessToken(r)
-	if err != nil {
-		log.Println(err)
-
-		currentSession, err := getSession(r)
-		if err == nil && currentSession.isAuthenticated() {
-			user = &currentSession.User
-		} else {
-			log.Println(err)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-	}
+	var user *User = r.Context().Value(userContextKey).(*User)
 
 	if err := r.ParseForm(); err != nil {
 		log.Println(err)
@@ -162,22 +139,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user *User
-	// authenticate and get userId from token
-	// TODO add support for session
-	user, err := authPersonalAccessToken(r)
-	if err != nil {
-		log.Println(err)
-
-		currentSession, err := getSession(r)
-		if err == nil && currentSession.isAuthenticated() {
-			user = &currentSession.User
-		} else {
-			log.Println(err)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-	}
+	var user *User = r.Context().Value(userContextKey).(*User)
 
 	lobAddressId, err := postgresClient.getLobAddressId(user.Id)
 	if err != nil {
@@ -207,7 +169,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
+func servePostcard(w http.ResponseWriter, r *http.Request) {
 	if !verifyRoute(w, r, http.MethodPost, "/postcards") {
 		return
 	}
@@ -216,33 +178,13 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 	isPreview, errIsPreview := strconv.ParseBool(query.Get("isPreview"))
 	toRecurseId, errToRecurseId := strconv.Atoi(query.Get("toRecurseId"))
 	if errIsPreview != nil || errToRecurseId != nil {
-		// TODO default to isPreview = true?
 		log.Println("Missing or malformed query parameter")
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	// authenticate and get userId from token
-	// TODO add support for session
-	_, err := authPersonalAccessToken(r)
-	if err != nil {
-		log.Println(err)
-
-		currentSession, err := getSession(r)
-		if err == nil && currentSession.isAuthenticated() {
-		} else {
-			log.Println(err)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-	}
-
-	// Parse our multipart form, 10 << 20 specifies a maximum
-	// upload of 10 MB files.
+	// Parse our multipart form, 10 << 20 specifies a maximum upload of 10 MB files.
 	r.ParseMultipartForm(10 << 20)
-	// FormFile returns the first file for the given key `myFile`
-	// it also returns the FileHeader so we can get the Filename,
-	// the Header and the size of the file
 	file, _, err := r.FormFile("front-postcard-file")
 	if err != nil {
 		log.Println("Error Retrieving the File")
@@ -252,8 +194,7 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// read all of the contents of our uploaded file into a
-	// byte array
+	// read all of the contents of our uploaded file into a byte array
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		log.Println(err)
@@ -302,47 +243,6 @@ func servePostcardPreview(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(resp)
 	return
-}
-
-// authPersonalAccessToken will authenticate an Authorization header by
-// forwarding a request to recurse.com API and cache a successful result
-// in pacCache.
-func authPersonalAccessToken(r *http.Request) (*User, error) {
-	// get token
-	pacToken := r.Header.Get("Authorization")
-	if pacToken == "" {
-		return nil, errors.New("PAT_NOT_FOUND")
-	}
-	// check cache
-	if u, ok := pacCache[pacToken]; ok {
-		return u, nil
-	}
-	// send request to recurse.com
-	req, err := http.NewRequest(http.MethodGet, "https://recurse.com/api/v1/profiles/me", nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", pacToken)
-
-	client := http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("unauthorized")
-	}
-
-	// read body
-	defer resp.Body.Close()
-	var user User
-	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
-		return nil, err
-	}
-
-	// update cache
-	pacCache[pacToken] = &user
-	return pacCache[pacToken], nil
 }
 
 func JSONMarshal(t interface{}) ([]byte, error) {
