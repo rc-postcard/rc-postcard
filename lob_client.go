@@ -9,7 +9,6 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
-	"net/http/httputil"
 	"os"
 )
 
@@ -59,6 +58,17 @@ type CreateAddressResponse struct {
 
 type CreatePostcardResponse struct {
 	Url string `json:"url"`
+}
+
+type LobError struct {
+	Message    string `json:"message"`
+	StatusCode int    `json:"status_code"`
+	Code       string `json:"code"`
+	Err        error  `json:"err"`
+}
+
+type LobErrorResponse struct {
+	LobError LobError `json:"error"`
 }
 
 func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
@@ -153,7 +163,7 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, isPreview bool) (*CreatePostcardResponse, error) {
+func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, isPreview bool) (*CreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -171,8 +181,7 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 	postPostcardUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + postcardsRoute
 	req, err := http.NewRequest("POST", postPostcardUrl, body)
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		return nil, &LobError{Err: err}
 	}
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 	var authHeader string
@@ -189,28 +198,26 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		return nil, &LobError{Err: err}
 	}
 
 	defer resp.Body.Close()
 
-	// update to read from actual response
-	var createPostcardResponse CreatePostcardResponse
-	if err := json.NewDecoder(resp.Body).Decode(&createPostcardResponse); err != nil {
-		log.Println(err)
-		return nil, err
+	if resp.StatusCode == 200 {
+		// update to read from actual response
+		var createPostcardResponse CreatePostcardResponse
+		if err := json.NewDecoder(resp.Body).Decode(&createPostcardResponse); err != nil {
+			return nil, &LobError{Err: err}
+		}
+		return &createPostcardResponse, nil
+	} else {
+		var lobErrorResponse LobErrorResponse
+		if err := json.NewDecoder(resp.Body).Decode(&lobErrorResponse); err != nil {
+			return nil, &LobError{Err: err}
+		}
+
+		log.Println(lobErrorResponse)
+
+		return nil, &lobErrorResponse.LobError
 	}
-
-	// TODO pull
-	log.Println(resp.StatusCode)
-	b, err := httputil.DumpResponse(resp, true)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	log.Println(string(b))
-
-	return &createPostcardResponse, nil
 }
