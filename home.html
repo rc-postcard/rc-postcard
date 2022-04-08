@@ -13,6 +13,7 @@
             const recipientSelector = document.getElementById('recipientSelector')
             const submitPreviewStatusLabel = document.getElementById('submitPreviewStatusLabel')
             const submitPostcardStatusLabel = document.getElementById('submitPostcardStatusLabel')
+            const backTextArea = document.getElementById("backTextArea")
 
             fetch("/addresses").then(response =>
                 response.json()
@@ -48,7 +49,6 @@
             })
 
             submitPreviewPhotoButton.addEventListener('click', function () {
-                console.log("clicked")
                 let photo = document.getElementById("postcardFileInput").files[0]
                 if (!photo) {
                     submitPreviewStatusLabel.innerText = "no photo selected"
@@ -57,6 +57,7 @@
                 }
                 let formData = new FormData()
                 formData.append("front-postcard-file", photo)
+                formData.append("back", backTextArea.value)
                 fetch("/postcards?isPreview=true&toRecurseId=0", { method: "POST", body: formData }).then(response =>
                     response.json()
                 ).then(data => {
@@ -76,6 +77,7 @@
             submitPostcardButton.addEventListener('click', function () {
                 let photo = document.getElementById("postcardFileInput").files[0]
                 let recipientId = recipientSelector.value
+                let receipientName = recipientSelector.options[recipientSelector.selectedIndex].innerText
                 if (!photo) {
                     submitPostcardStatusLabel.innerText = "no photo selected"
                     submitPostcardStatusLabel.style = "background-color: red"
@@ -86,14 +88,14 @@
                     return
                 }
 
-                console.log("sending postcard to " + recipientId)
                 let formData = new FormData()
                 formData.append("front-postcard-file", photo)
+                formData.append("back", backTextArea.value)
                 fetch("/postcards?isPreview=false&toRecurseId=" + recipientId, { method: "POST", body: formData }).then(response =>
                     response.json()
                 ).then(data => {
                     if (!data["err"] && !data["status_code"]) {
-                        submitPostcardStatusLabel.innerText = "success ✅"
+                        submitPostcardStatusLabel.innerText = "success sending to " + receipientName + " ✅"
                         submitPostcardStatusLabel.style = "background-color: green"
                     } else {
                         submitPostcardStatusLabel.innerText = data["message"]
@@ -142,6 +144,11 @@
             margin-top: 10px;
             width: 100px;
         }
+
+        textarea {
+            width: 800px;
+            height: 400px;
+        }
     </style>
 </head>
 
@@ -157,6 +164,9 @@
         <button id="deleteAddressButton">Delete my address 😢</button>
     </div>
     <input type="file" id="postcardFileInput" />
+    <textarea id="backTextArea">
+    </textarea>
+    <br>
     <button id="submitPreviewPhoto">Preview</button>
     <div>
         <label id="pdfPreviewLabel">PDF Preview (try refreshing a few times)</label>

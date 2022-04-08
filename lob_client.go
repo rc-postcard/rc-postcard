@@ -163,7 +163,7 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, isPreview bool) (*CreatePostcardResponse, *LobError) {
+func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, isPreview bool) (*CreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -171,7 +171,9 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 	frontPart, _ := writer.CreateFormFile("front", "user-upload")
 	io.Copy(frontPart, bytes.NewReader(frontImage))
 
-	_ = writer.WriteField("back", "<body>hello, back!</body>")
+	back = fmt.Sprintf("<body>%s</body", back)
+
+	_ = writer.WriteField("back", back)
 	_ = writer.WriteField("to", toLobAddressId)
 	_ = writer.WriteField("from", fromLobAddressId)
 

@@ -27,3 +27,9 @@ TODO: make tools to make postcard management easier
 - metadata on postcards (to, from rc id)
 - store postcards with recipient
 - credit users?
+
+## Bonus
+- Resize image
+- Validate address
+- Show better preview with iframe?
+- RC logo
