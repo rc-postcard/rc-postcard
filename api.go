@@ -201,6 +201,8 @@ func servePostcard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	back := r.FormValue("back")
+
 	rcAddressId, err := postgresClient.getLobAddressId(recurseCenterRecurseId)
 	if err != nil {
 		log.Printf("Error getting recurse address: %v\n", err)
@@ -220,7 +222,7 @@ func servePostcard(w http.ResponseWriter, r *http.Request) {
 		recipientAddressId = rcAddressId
 	}
 
-	createPostCardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, isPreview)
+	createPostCardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, back, isPreview)
 	if lobError != nil && (lobError.Err != nil || lobError.StatusCode/100 >= 5) {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
