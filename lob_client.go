@@ -179,7 +179,6 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	// TODO come up with correct fileName
 	frontPart, _ := writer.CreateFormFile("front", "user-upload")
 	io.Copy(frontPart, bytes.NewReader(frontImage))
 
