@@ -23,7 +23,6 @@ TODO: make tools to make postcard management easier
 
 
 ## TODO
-- Session and token auth
 - PUT address - delete old, create new, updating mapping
 - SEND address
 - Send with payment
@@ -32,3 +31,9 @@ TODO: make tools to make postcard management easier
 - Add metadata to address
 - Add middleware
 - Add scripts to make processing easier
+- bubble up 422 error, ideally with info
+- error messages in js when something goes wrong
+- credit so that users can know what they're doing
+- add disclaimer
+- add list of postcards
+- delete postcard
