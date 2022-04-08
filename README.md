@@ -31,3 +31,5 @@ TODO: make tools to make postcard management easier
 ## Bonus
 - Resize image
 - Validate address
+- Show better preview with iframe?
+- RC logo
