@@ -107,7 +107,7 @@
             deleteAddressButton.addEventListener('click', function () {
                 fetch("/addresses", { method: "DELETE" }).then(response => {
                     console.log(response)
-                    window.location.replace("http://localhost:8080/");
+                    window.location.replace(window.location.href);
                     return;
                 });
             })
