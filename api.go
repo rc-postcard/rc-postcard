@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -221,17 +222,35 @@ func servePostcard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createPostCardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, isPreview)
+<<<<<<< HEAD
 	if lobError != nil {
+=======
+	fmt.Println("RESPONSE")
+	fmt.Println(createPostCardResponse)
+	fmt.Println(lobError)
+	if lobError != nil && (lobError.Err != nil || lobError.StatusCode/100 >= 5) {
+>>>>>>> a0bce790fad64f995db220088385b2ee36127efc
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	} else if lobError != nil && (lobError.StatusCode/100 == 3 || lobError.StatusCode/100 == 4) {
+		resp, err := JSONMarshal(lobError)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+
+		w.WriteHeader(lobError.StatusCode)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(resp)
 		return
 	}
 
 	if !isPreview {
 		createPostCardResponse.Url = ""
 	}
-
 	resp, err := JSONMarshal(createPostCardResponse)
+
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
