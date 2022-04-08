@@ -1,6 +1,13 @@
 # rc-postcard
 [![Go Report Card](https://goreportcard.com/badge/github.com/rc-postcard/rc-postcard)](https://goreportcard.com/report/github.com/rc-postcard/rc-postcard) [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0) ![Coverage: O](https://img.shields.io/badge/coverage-200%25-red)
 
+## How to use website
+- Find an image you like and resize to height:width ratio of 4.25:6.25. (Feature request: auto resize)
+- I recommend using https://redketchup.io/image-resizer. Use Aspect Ratio "Custom Aspect Ratio" with horizontal ratio 6.25 and vertical ratio 4.25. Then scroll down and "save image"
+- Sign in at https://rc-postcard.fly.dev and then create your account with a valid address you'd like to receive mail at. (Sorry US only for now, our top engineers are working on it).
+- Upload your resized photo, enter some text, and preview!
+- If you like your postcard, select a recipient (from recursers who have signed up) and send!
+
 
 ## Build and Run
 Create an OAuth application at [https://www.recurse.com/settings/apps](https://www.recurse.com/settings/apps) with proper redirect URI (http://localhost:8080/auth for local run).
