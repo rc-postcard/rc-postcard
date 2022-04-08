@@ -5,10 +5,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
-// TODO don't use default client
-var client *http.Client = http.DefaultClient
+var client *http.Client = &http.Client{
+	Timeout: time.Second * 20,
+}
 
 var addr = flag.String("addr", ":8080", "http service address")
 

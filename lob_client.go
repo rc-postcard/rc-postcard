@@ -10,6 +10,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 type LobClient struct {
@@ -37,13 +38,18 @@ type DeleteAddressResponse struct {
 	Deleted   bool   `json:"deleted"`
 }
 
+type CreateAddressRequestMetadata struct {
+	RCId string `json:"rc_id"`
+}
+
 type CreateAddressRequest struct {
-	Name         string `json:"name"`
-	AddressLine1 string `json:"address_line1"`
-	AddressLine2 string `json:"address_line2"`
-	AddressCity  string `json:"address_city"`
-	AddressState string `json:"address_state"`
-	AddressZip   string `json:"address_zip"`
+	Name         string                       `json:"name"`
+	AddressLine1 string                       `json:"address_line1"`
+	AddressLine2 string                       `json:"address_line2"`
+	AddressCity  string                       `json:"address_city"`
+	AddressState string                       `json:"address_state"`
+	AddressZip   string                       `json:"address_zip"`
+	Metadata     CreateAddressRequestMetadata `json:"metadata"`
 }
 
 type CreateAddressResponse struct {
@@ -71,8 +77,13 @@ type LobErrorResponse struct {
 	LobError LobError `json:"error"`
 }
 
+type CreatePostcardMetadata struct {
+	ToRcId   string `json:"to_rc_id"`
+	FromRcId string `json:"from_rc_id"`
+}
+
 func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
-	getAddressUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + addressesRoute + "/" + lobAddressId
+	getAddressUrl := fmt.Sprintf("%s/%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute, lobAddressId)
 	req, err := http.NewRequest("GET", getAddressUrl, nil)
 	if err != nil {
 		log.Println(err)
@@ -97,7 +108,7 @@ func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
 }
 
 func (*LobClient) DeleteAddress(lobAddressId string) error {
-	deleteAddressUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + addressesRoute + "/" + lobAddressId
+	deleteAddressUrl := fmt.Sprintf("%s/%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute, lobAddressId)
 	req, err := http.NewRequest("DELETE", deleteAddressUrl, nil)
 	if err != nil {
 		log.Println(err)
@@ -121,7 +132,7 @@ func (*LobClient) DeleteAddress(lobAddressId string) error {
 	return nil
 }
 
-func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string) (*CreateAddressResponse, error) {
+func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string, rcId int) (*CreateAddressResponse, error) {
 	createAddressRequest := &CreateAddressRequest{
 		Name:         name,
 		AddressLine1: addressLine1,
@@ -129,6 +140,7 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 		AddressCity:  city,
 		AddressState: state,
 		AddressZip:   zipCode,
+		Metadata:     CreateAddressRequestMetadata{RCId: strconv.Itoa(rcId)},
 	}
 
 	marshalledCreateAddressRequest, err := json.Marshal(createAddressRequest)
@@ -137,7 +149,7 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 		return nil, err
 	}
 
-	createAddressUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + addressesRoute
+	createAddressUrl := fmt.Sprintf("%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute)
 	req, err := http.NewRequest("POST", createAddressUrl, bytes.NewBuffer(marshalledCreateAddressRequest))
 	if err != nil {
 		log.Println(err)
@@ -163,11 +175,10 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, isPreview bool) (*CreatePostcardResponse, *LobError) {
+func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, isPreview bool, fromRcId, toRcId int) (*CreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	// TODO come up with correct fileName
 	frontPart, _ := writer.CreateFormFile("front", "user-upload")
 	io.Copy(frontPart, bytes.NewReader(frontImage))
 
@@ -177,10 +188,27 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 	_ = writer.WriteField("to", toLobAddressId)
 	_ = writer.WriteField("from", fromLobAddressId)
 
+	postcardMetadata, err := json.Marshal(CreatePostcardMetadata{FromRcId: strconv.Itoa(fromRcId), ToRcId: strconv.Itoa(toRcId)})
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
+
+	metadataPart, err := writer.CreateFormField("metadata")
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
+
+	_, err = metadataPart.Write(postcardMetadata)
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
+
 	writer.Close()
 
-	// TODO update with formatting
-	postPostcardUrl := lobAddressBaseUrl + "/" + lobVersion + "/" + postcardsRoute
+	postPostcardUrl := fmt.Sprintf("%s/%s/%s", lobAddressBaseUrl, lobVersion, postcardsRoute)
 	req, err := http.NewRequest("POST", postPostcardUrl, body)
 	if err != nil {
 		return nil, &LobError{Err: err}

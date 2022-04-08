@@ -19,7 +19,7 @@
                 fetch("/addresses", { method: "POST", body: body }).then(response =>
                     response.json()
                 ).then(data => {
-                    window.location.replace("http://localhost:8080/");
+                    window.location.replace(window.location.href);
                 });
             });
         }

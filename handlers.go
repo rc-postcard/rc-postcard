@@ -86,7 +86,6 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 
 	lobAddressId, err := postgresClient.getLobAddressId(session.User.Id)
 	if err != nil || lobAddressId == "" {
-		// TODO refine for "not found scenario"
 		noAddressHome.Execute(w, nil)
 		return
 	}

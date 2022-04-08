@@ -20,12 +20,9 @@ Create an account on [lob.com](https://lob.com) and set your API keys in your en
 
 ## Other tools
 TODO: make tools to make postcard management easier
+
 ## TODO before launch
 - disclaimer
-- add text on back of postcard
-- metadata on address (rc id)
-- metadata on postcards (to, from rc id)
-- store postcards with recipient
 - credit users?
 
 ## Bonus

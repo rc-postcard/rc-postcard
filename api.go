@@ -106,7 +106,7 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 	name, address1, address2 := r.FormValue("name"), r.FormValue("address1"), r.FormValue("address2")
 	city, state, zip := r.FormValue("city"), r.FormValue("state"), r.FormValue("zip")
 
-	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip)
+	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip, user.Id)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Error creating address", http.StatusInternalServerError)
@@ -174,6 +174,8 @@ func servePostcard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var user *User = r.Context().Value(userContextKey).(*User)
+
 	query := r.URL.Query()
 	isPreview, errIsPreview := strconv.ParseBool(query.Get("isPreview"))
 	toRecurseId, errToRecurseId := strconv.Atoi(query.Get("toRecurseId"))
@@ -229,7 +231,7 @@ func servePostcard(w http.ResponseWriter, r *http.Request) {
 		recipientAddressId = rcAddressId
 	}
 
-	createPostCardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, backTpl.String(), isPreview)
+	createPostCardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, backTpl.String(), isPreview, user.Id, toRecurseId)
 	if lobError != nil && (lobError.Err != nil || lobError.StatusCode/100 >= 5) {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
