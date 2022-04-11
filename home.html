@@ -14,6 +14,7 @@
             const submitPreviewStatusLabel = document.getElementById('submitPreviewStatusLabel')
             const submitPostcardStatusLabel = document.getElementById('submitPostcardStatusLabel')
             const backTextArea = document.getElementById("backTextArea")
+            const postcardslist = document.getElementById("postcardslist")
 
             fetch("/addresses").then(response =>
                 response.json()
@@ -36,6 +37,21 @@
                     opt.innerHTML = contact["name"] + " (" + contact["email"] + ")"
                     recipientSelector.appendChild(opt)
                 });
+            })
+
+            fetch("/postcards").then(response => response.json()
+            ).then(data => {
+                console.log(data)
+                postcards = data["data"]
+                for (let postcard of postcards) {
+                    var postcardListItem = document.createElement('li')
+                    var postcardURL = document.createElement('a')
+                    postcardURL.href = postcard["url"]
+                    postcardURL.target = "_blank"
+                    postcardURL.innerText = "FROM" + postcard["metadata"]["from_rc_id"]
+                    postcardListItem.appendChild(postcardURL)
+                    postcardslist.appendChild(postcardListItem)
+                }
             })
 
             addressButton.addEventListener('click', function () {
@@ -162,6 +178,11 @@
         <div id="state"></div>
         <div id="zip"></div>
         <button id="deleteAddressButton">Delete my address 😢</button>
+    </div>
+    <button id="addressButton">Show my postcards :)</button>
+    <div id="postcardsDiv">
+        <ul id="postcardslist">
+        </ul>
     </div>
     <input type="file" id="postcardFileInput" />
     <textarea id="backTextArea">
