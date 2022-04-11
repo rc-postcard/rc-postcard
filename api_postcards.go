@@ -41,11 +41,10 @@ func getPostcards(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 	return
-
 }
 
 func sendPostcards(w http.ResponseWriter, r *http.Request) {
