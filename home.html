@@ -15,6 +15,8 @@
             const submitPostcardStatusLabel = document.getElementById('submitPostcardStatusLabel')
             const backTextArea = document.getElementById("backTextArea")
             const postcardslist = document.getElementById("postcardslist")
+            var contacts;
+            var contactMapping = {};
 
             fetch("/addresses").then(response =>
                 response.json()
@@ -36,8 +38,28 @@
                     opt.value = contact["recurseId"]
                     opt.innerHTML = contact["name"] + " (" + contact["email"] + ")"
                     recipientSelector.appendChild(opt)
+                    contactMapping[contact["recurseId"]] = contact["name"];
                 });
-            })
+                return fetch("/postcards");
+            }).then(response => response.json()
+            ).then(data => {
+                postcards = data["data"]
+                for (let postcard of postcards) {
+                    var postcardListItem = document.createElement('li')
+                    var postcardURL = document.createElement('a')
+                    postcardURL.href = postcard["url"]
+                    postcardURL.target = "_blank"
+
+                    var from_id = postcard["metadata"]["from_rc_id"]
+                    var from_name = contactMapping[from_id]
+                    console.log(from_id, from_name, contactMapping);
+                    postcardURL.innerText = "You've got a postcard from " + from_name + "!"
+                    postcardListItem.appendChild(postcardURL)
+                    postcardslist.appendChild(postcardListItem)
+                }
+            });
+
+            
 
             fetch("/postcards").then(response => response.json()
             ).then(data => {
