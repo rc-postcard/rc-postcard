@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 type LobClient struct {
@@ -92,9 +93,10 @@ type Metadata struct {
 }
 
 type Postcard struct {
-	Id       string   `json:"id"`
-	Url      string   `json:"url"`
-	Metadata Metadata `json:"metadata"`
+	Id          string    `json:"id"`
+	Url         string    `json:"url"`
+	Metadata    Metadata  `json:"metadata"`
+	DateCreated time.Time `json:"date_created"`
 }
 
 func (*LobClient) GetPostcards(recipientRecurseId int) (*GetPostcardsResponse, error) {

@@ -52,8 +52,9 @@
 
                     var from_id = postcard["metadata"]["from_rc_id"]
                     var from_name = contactMapping[from_id]
+                    var time = new Date(postcard["date_created"]).toLocaleString();
                     console.log(from_id, from_name, contactMapping);
-                    postcardURL.innerText = "You've got a postcard from " + from_name + "!"
+                    postcardURL.innerText = "You've got a postcard from " + from_name + "! " + time
                     postcardListItem.appendChild(postcardURL)
                     postcardslist.appendChild(postcardListItem)
                 }
