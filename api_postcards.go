@@ -3,10 +3,14 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"image"
+	"image/jpeg"
+	_ "image/png"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/nfnt/resize"
 )
 
 func servePostcards(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +78,30 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	// read all of the contents of our uploaded file into a byte array
-	fileBytes, err := ioutil.ReadAll(file)
+
+	// Decoding gives you an Image.
+	// If you have an io.Reader already, you can give that to Decode
+	// without reading it into a []byte.
+	image, _, err := image.Decode(file)
+	// check err
+	if err != nil {
+		log.Printf("Error decoding image: %v\n", err)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	newImage := resize.Resize(
+		1875,
+		1275,
+		image,
+		resize.Lanczos3,
+	)
+
+	// Encode uses a Writer, use a Buffer if you need the raw []byte
+	var fileBytes bytes.Buffer
+	err = jpeg.Encode(&fileBytes, newImage, nil)
+
+	// check err
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -109,7 +136,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		recipientAddressId = rcAddressId
 	}
 
-	createPostCardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, backTpl.String(), isPreview, user.Id, toRecurseId)
+	createPostCardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes.Bytes(), backTpl.String(), isPreview, user.Id, toRecurseId)
 	if lobError != nil && (lobError.Err != nil || lobError.StatusCode/100 >= 5) {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
