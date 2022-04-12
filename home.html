@@ -61,21 +61,6 @@
 
             
 
-            fetch("/postcards").then(response => response.json()
-            ).then(data => {
-                console.log(data)
-                postcards = data["data"]
-                for (let postcard of postcards) {
-                    var postcardListItem = document.createElement('li')
-                    var postcardURL = document.createElement('a')
-                    postcardURL.href = postcard["url"]
-                    postcardURL.target = "_blank"
-                    postcardURL.innerText = "FROM" + postcard["metadata"]["from_rc_id"]
-                    postcardListItem.appendChild(postcardURL)
-                    postcardslist.appendChild(postcardListItem)
-                }
-            })
-
             addressButton.addEventListener('click', function () {
                 if (addressDiv.style.display === "none") {
                     addressButton.innerText = "Hide my address 👻"
