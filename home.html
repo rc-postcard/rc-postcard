@@ -59,7 +59,7 @@
                 }
             });
 
-            
+
 
             addressButton.addEventListener('click', function () {
                 if (addressDiv.style.display === "none") {
@@ -134,6 +134,49 @@
                     return;
                 });
             })
+
+            photoUploadButton = document.getElementById("postcardFileInput");
+            photoUploadButton.addEventListener('change', async (e) => {
+                let photo = document.getElementById("postcardFileInput").files[0]
+                if (!photo) {
+                    submitPreviewStatusLabel.innerText = "no photo selected"
+                    submitPreviewStatusLabel.style = "background-color: red"
+                    return;
+                }
+
+                const dataUri = await dataUriFromFormField(photo);
+                const imgEl = document.createElement('img');
+                imgEl.addEventListener('load', () => {
+                    const resizedDataUri = resizeImage(imgEl, imgEl.width);
+                    document.querySelector('#img-preview').src = resizedDataUri;
+                });
+                imgEl.src = dataUri;
+            });
+
+            function dataUriFromFormField (field) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.addEventListener('load', () => {
+                        resolve(reader.result);
+                    });
+                    reader.readAsDataURL(field);
+                });
+            }
+
+            function resizeImage (imgEl, wantedWidth) {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // goal (width x height): 6.25 x 4.25
+                const aspect = imgEl.width / imgEl.height;
+
+                console.log(aspect);
+                canvas.width = wantedWidth;
+                canvas.height = wantedWidth * 4.25 / 6.25;
+
+                ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
+                return canvas.toDataURL();
+            }
         }
     </script>
     <style>
@@ -192,6 +235,7 @@
         </ul>
     </div>
     <input type="file" id="postcardFileInput" />
+    <img id="img-preview" style="width: 300px;">
     <textarea id="backTextArea">
     </textarea>
     <br>

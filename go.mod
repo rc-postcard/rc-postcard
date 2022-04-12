@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgx/v4 v4.15.0
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
 )
 
