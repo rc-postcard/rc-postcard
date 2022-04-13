@@ -8,6 +8,9 @@
             const addressButton = document.getElementById('addressButton');
             const deleteAddressButton = document.getElementById('deleteAddressButton');
             const addressDiv = document.getElementById('addressDiv')
+            const postcardImageInput = document.getElementById("postcardFileInput")
+            const uploadButton = document.getElementById("upload")
+            const cropButton = document.getElementById("crop")
             const submitPreviewPhotoButton = document.getElementById('submitPreviewPhoto');
             const submitPostcardButton = document.getElementById('submitPostcard')
             const recipientSelector = document.getElementById('recipientSelector')
@@ -15,8 +18,11 @@
             const submitPostcardStatusLabel = document.getElementById('submitPostcardStatusLabel')
             const backTextArea = document.getElementById("backTextArea")
             const postcardslist = document.getElementById("postcardslist")
-            var contacts;
-            var contactMapping = {};
+            let contacts;
+            let contactMapping = {};
+            let photo;
+            let imageNaturalWidth;
+            let imageNaturalHeight;
 
             fetch("/addresses").then(response =>
                 response.json()
@@ -59,8 +65,6 @@
                 }
             });
 
-            
-
             addressButton.addEventListener('click', function () {
                 if (addressDiv.style.display === "none") {
                     addressButton.innerText = "Hide my address 👻"
@@ -71,8 +75,122 @@
                 }
             })
 
+            postcardImageInput.addEventListener('change', function (event) {
+                if(event.target.files.length > 0){
+                    document.getElementById("postcardImageCropper").style.display = "block";
+                    const file = event.target.files[0];
+                    const src = URL.createObjectURL(file);
+                    const preview = document.getElementById("postcardImagePreview");
+                    preview.filename = file.name;
+                    preview.src = src;
+                    preview.style.display = "block";
+
+                    //cropper
+                    preview.onload = function() {
+                        const cropper = document.getElementById("cropper");
+                        const previewRect = preview.getBoundingClientRect();
+                        if(previewRect.height >= previewRect.width * 4.25 / 6.25) {
+                            cropper.style.width = "calc(100% - 20px)";
+                            cropper.style.height = `${(previewRect.width - 20) * 4.25 / 6.25}px`;
+                        } else {
+                            cropper.style.height = "calc(100% - 20px)";
+                            cropper.style.width = `${(previewRect.height - 20) * 6.25 / 4.25}px`;
+                        }
+                        cropper.style.transform = "translate(0px, 0px)";
+                    }
+                }
+            })
+
+            let startX, startY;
+            let prevTranslateX = 0, prevTranslateY = 0;
+            let isRightBottomCornerBeingDragged = false;
+
+            document.addEventListener("dragstart", function(event) {
+                if(event.target.id === "cropper") {
+                    startX = event.clientX;
+                    startY = event.clientY;
+                } else if(event.target.id === "rightBottomCorner") {
+                    isRightBottomCornerBeingDragged = true;
+                }
+            }, false);
+
+            /* events fired on the drop targets */
+            document.addEventListener("dragover", function(event) {
+                // prevent default to allow drop
+                event.preventDefault();
+            }, false);
+
+            function bound(value, min, max) {
+                return Math.min(Math.max(value, min), max);
+            }
+
+            document.addEventListener("drop", function(event) {
+                // prevent default action (open as link for some elements)
+                event.preventDefault();
+                const cropper = document.getElementById("cropper");
+                const cropperRect = cropper.getBoundingClientRect();
+                const preview = document.getElementById("postcardImagePreview");
+                const previewRect = preview.getBoundingClientRect();
+                if(!isRightBottomCornerBeingDragged) {
+                    let newX = bound(event.clientX - startX + prevTranslateX, 0, previewRect.width - cropperRect.width);
+                    let newY = bound(event.clientY - startY + prevTranslateY, 0, previewRect.height - cropperRect.height);
+                    cropper.style.transform = `translate(${newX}px, ${newY}px)`;
+                    prevTranslateX = newX;
+                    prevTranslateY = newY;
+                } else {
+                    let img = new Image();
+                    img.onload = () => {
+                        let minWidth =  1875 * previewRect.width / img.naturalWidth;
+                        let newWidth = Math.max(event.clientX - cropperRect.left, minWidth + 1)
+                        cropper.style.width = `${newWidth}px`;
+                        cropper.style.height = `${newWidth * 4.25 / 6.25}px`;
+                        isRightBottomCornerBeingDragged = false;
+                    }
+                    img.src = preview.src;
+                }
+            }, false);
+
+            cropButton.addEventListener('click', function drawCroppedImageToCanvas() {
+                const preview = document.getElementById("postcardImagePreview");
+                const cropper = document.getElementById("cropper");
+                const previewRect = preview.getBoundingClientRect();
+                const cropperRect = cropper.getBoundingClientRect();
+
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = cropperRect.width * img.naturalWidth / previewRect.width;
+                    canvas.height = cropperRect.height * img.naturalHeight / previewRect.height;
+                    canvas.style.width = `${cropperRect.width}px`;
+                    canvas.style.height = `${cropperRect.height}px`;
+
+                    ctx.drawImage(
+                        img,
+                        (cropperRect.left - previewRect.left) * img.naturalWidth / previewRect.width,
+                        (cropperRect.top - previewRect.top) * img.naturalHeight / previewRect.height,
+                        cropperRect.width * img.naturalWidth / previewRect.width,
+                        cropperRect.height * img.naturalHeight / previewRect.height,
+                        0,
+                        0,
+                        cropperRect.width * img.naturalWidth / previewRect.width,
+                        cropperRect.height * img.naturalHeight / previewRect.height,
+                    );
+                };
+                img.src = preview.src;
+            })
+
+            uploadButton.addEventListener('click', function() {
+                const canvas = document.getElementById('canvas');
+                const preview = document.getElementById("postcardImagePreview");
+                canvas.toBlob((blob) => {
+                    photo = new File([blob], preview.filename, { type: "image/jpeg" })
+                    document.getElementById("postcardImageCropper").style.display = "none";
+                }, 'image/jpeg');
+            })
+
             submitPreviewPhotoButton.addEventListener('click', function () {
-                let photo = document.getElementById("postcardFileInput").files[0]
+                // let photo = document.getElementById("postcardFileInput").files[0]
                 if (!photo) {
                     submitPreviewStatusLabel.innerText = "no photo selected"
                     submitPreviewStatusLabel.style = "background-color: red"
@@ -98,7 +216,7 @@
             });
 
             submitPostcardButton.addEventListener('click', function () {
-                let photo = document.getElementById("postcardFileInput").files[0]
+                // let photo = document.getElementById("postcardFileInput").files[0]
                 let recipientId = recipientSelector.value
                 let receipientName = recipientSelector.options[recipientSelector.selectedIndex].innerText
                 if (!photo) {
@@ -143,6 +261,10 @@
             font-family: "Comic Sans MS", "Comic Sans", cursive;
         }
 
+        body {
+            position: relative;
+        }
+
         input {
             display: block;
             font-size: 1.05rem;
@@ -172,46 +294,103 @@
             width: 800px;
             height: 400px;
         }
+        
+        .wrapper {
+            position: relative;
+        }
+
+        .postcardImageCropper {
+            top: 0;
+            left: 0;
+            position: absolute;
+            width: calc(100vw - 8rem);
+            max-width: 50rem;
+            /* height: calc(100vh - 8rem); */
+            margin: 4rem;
+            padding: 3rem;
+            background-color: white;
+            border-radius: 8px;
+            border: 1px solid aquamarine;
+        }
+        
+        .postcardImageCropper img {
+            width: 100%;
+        }
+
+        .cropperWrapper {
+            position: relative;
+        }
+
+        .cropper {
+            top: 0;
+            left: 0;
+            position: absolute;
+            border: 4px solid chartreuse;
+            cursor: move;
+        }
+
+        .cropper .rightBottomCorner {
+            position: absolute;
+            right: -4px;
+            bottom: -4px;
+            width: 2rem;
+            height: 2rem;
+            background-color: chartreuse;
+            cursor: nwse-resize;
+        }
     </style>
 </head>
 
 <body>
-    <button id="addressButton">Show my address :)</button>
-    <div style="display: none;" id="addressDiv">
-        <div id="name"></div>
-        <div id="address1"></div>
-        <div id="address2"></div>
-        <div id="city"></div>
-        <div id="state"></div>
-        <div id="zip"></div>
-        <button id="deleteAddressButton">Delete my address 😢</button>
-    </div>
-    <button id="addressButton">Show my postcards :)</button>
-    <div id="postcardsDiv">
-        <ul id="postcardslist">
-        </ul>
-    </div>
-    <input type="file" id="postcardFileInput" />
-    <textarea id="backTextArea">
-    </textarea>
-    <br>
-    <button id="submitPreviewPhoto">Preview</button>
-    <div>
-        <label id="pdfPreviewLabel">PDF Preview (try refreshing a few times)</label>
-        <label id="submitPreviewStatusLabel"></label>
-        <a target="_blank" id="pdfPreviewLink" href=""></a>
-    </div>
-    <div>
-        <label>Select who you'd like to send your postcard to. See someone in RC who's not on the list? Tell them to
-            sign up at LINK</label>
-        <select id="recipientSelector" name="Recipient" id="receipients">
-        </select>
-        <br><br>
-    </div>
-    <button id="submitPostcard">Looks good, submit!</button>
-    <label id="submitPostcardStatusLabel"></label>
+    <div class="wrapper">
+        <button id="addressButton">Show my address :)</button>
+        <div style="display: none;" id="addressDiv">
+            <div id="name"></div>
+            <div id="address1"></div>
+            <div id="address2"></div>
+            <div id="city"></div>
+            <div id="state"></div>
+            <div id="zip"></div>
+            <button id="deleteAddressButton">Delete my address 😢</button>
+        </div>
+        <button id="addressButton">Show my postcards :)</button>
+        <div id="postcardsDiv">
+            <ul id="postcardslist" class="postcardslist">
+            </ul>
+        </div>
+        <div id="postcardImageCropper" style="display: none;" class="postcardImageCropper">
+            <div class="cropperWrapper">
+                <img id="postcardImagePreview"/>
+                <div id="cropper" class="cropper" draggable="true">
+                    <div id="rightBottomCorner" class="rightBottomCorner" draggable="true"></div>
+                </div>
+            </div>
+            <div><button id="crop">Crop</button></div>
+            <canvas id="canvas"></canvas>
+            <div><button id="upload">Upload</button></div>
+        </div>
+        <input type="file" id="postcardFileInput" />
+        <textarea id="backTextArea">
+        </textarea>
+        <br>
+        <button id="submitPreviewPhoto">Preview</button>
+        <div>
+            <label id="pdfPreviewLabel">PDF Preview (try refreshing a few times)</label>
+            <label id="submitPreviewStatusLabel"></label>
+            <a target="_blank" id="pdfPreviewLink" href=""></a>
+        </div>
+        <div>
+            <label>Select who you'd like to send your postcard to. See someone in RC who's not on the list? Tell them to
+                sign up at LINK</label>
+            <select id="recipientSelector" name="Recipient" id="receipients">
+            </select>
+            <br><br>
+        </div>
+        <button id="submitPostcard">Looks good, submit!</button>
+        <label id="submitPostcardStatusLabel"></label>
 
-    <div>Made with ❤️ at the Recurse Center.</div>
+        <div>Made with ❤️ at the Recurse Center.</div>
+    </div>
 </body>
 
 </html>
