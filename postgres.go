@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"time"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
@@ -24,6 +25,8 @@ func (*PostgresClient) setupPostgresConnection() error {
 		log.Printf("Unable to connect to database: %v\n", err)
 		return err
 	}
+
+	db.SetConnMaxLifetime(time.Minute)
 
 	if err = db.Ping(); err != nil {
 		return err

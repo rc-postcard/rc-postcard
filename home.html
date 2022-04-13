@@ -52,14 +52,27 @@
                 postcards = data["data"]
                 for (let postcard of postcards) {
                     var postcardListItem = document.createElement('li')
+                    
                     var postcardURL = document.createElement('a')
                     postcardURL.href = postcard["url"]
                     postcardURL.target = "_blank"
+                    var postcardDiv = document.createElement('div');
+                    postcardDiv.classList.add("postcardDiv");
+
+                    var timeDiv = document.createElement('div');
+                    var time = new Date(postcard["date_created"]).toLocaleString();
+                    timeDiv.innerText = time;
 
                     var from_id = postcard["metadata"]["from_rc_id"]
                     var from_name = contactMapping[from_id]
+                    
+                    var senderDiv = document.createElement('div');
+                    senderDiv.innerText = from_name;
+                    
                     console.log(from_id, from_name, contactMapping);
-                    postcardURL.innerText = "You've got a postcard from " + from_name + "!"
+                    postcardDiv.appendChild(timeDiv)
+                    postcardDiv.appendChild(senderDiv)
+                    postcardURL.appendChild(postcardDiv)
                     postcardListItem.appendChild(postcardURL)
                     postcardslist.appendChild(postcardListItem)
                 }
@@ -337,6 +350,27 @@
             height: 2rem;
             background-color: chartreuse;
             cursor: nwse-resize;
+        }
+
+        .postcardslist li {
+            list-style: none;
+            border: 1px solid grey;
+            background-color: lightblue;
+        }
+        
+        .postcardslist li:nth-child(2n + 1) {
+            background-color: lavender;
+        }
+
+        .postcardslist li:not(:last-child) {
+            border-bottom: unset;
+        }
+
+        .postcardDiv {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-gap: 4rem;
+            padding: 0.5rem 1rem;
         }
     </style>
 </head>
