@@ -69,7 +69,6 @@
                     var senderDiv = document.createElement('div');
                     senderDiv.innerText = from_name;
                     
-                    console.log(from_id, from_name, contactMapping);
                     postcardDiv.appendChild(timeDiv)
                     postcardDiv.appendChild(senderDiv)
                     postcardURL.appendChild(postcardDiv)
@@ -203,7 +202,6 @@
             })
 
             submitPreviewPhotoButton.addEventListener('click', function () {
-                // let photo = document.getElementById("postcardFileInput").files[0]
                 if (!photo) {
                     submitPreviewStatusLabel.innerText = "no photo selected"
                     submitPreviewStatusLabel.style = "background-color: red"
@@ -229,7 +227,6 @@
             });
 
             submitPostcardButton.addEventListener('click', function () {
-                // let photo = document.getElementById("postcardFileInput").files[0]
                 let recipientId = recipientSelector.value
                 let receipientName = recipientSelector.options[recipientSelector.selectedIndex].innerText
                 if (!photo) {
@@ -260,7 +257,6 @@
 
             deleteAddressButton.addEventListener('click', function () {
                 fetch("/addresses", { method: "DELETE" }).then(response => {
-                    console.log(response)
                     window.location.replace(window.location.href);
                     return;
                 });
