@@ -6,10 +6,12 @@
     <script type="text/javascript">
         window.onload = function () {
             const addressButton = document.getElementById('addressButton');
+            const postcardsButton = document.getElementById('postcardsButton');
+            const postcardsDiv = document.getElementById('postcardsDiv');
             const deleteAddressButton = document.getElementById('deleteAddressButton');
             const addressDiv = document.getElementById('addressDiv')
             const postcardImageInput = document.getElementById("postcardFileInput")
-            const uploadButton = document.getElementById("upload")
+            const selectPhotoButton = document.getElementById("selectPhotoButton")
             const cropButton = document.getElementById("crop")
             const submitPreviewPhotoButton = document.getElementById('submitPreviewPhoto');
             const submitPostcardButton = document.getElementById('submitPostcard')
@@ -84,6 +86,16 @@
                 } else {
                     addressButton.innerText = "Show my address :)"
                     addressDiv.style.display = "none";
+                }
+            })
+
+            postcardsButton.addEventListener('click', function () {
+                if (postcardsDiv.style.display === "none") {
+                    postcardsButton.innerText = "Hide my postcards 💌"
+                    postcardsDiv.style.display = "block";
+                } else {
+                    postcardsButton.innerText = "Show my postcards :)"
+                    postcardsDiv.style.display = "none";
                 }
             })
 
@@ -192,7 +204,7 @@
                 img.src = preview.src;
             })
 
-            uploadButton.addEventListener('click', function() {
+            selectPhotoButton.addEventListener('click', function() {
                 const canvas = document.getElementById('canvas');
                 const preview = document.getElementById("postcardImagePreview");
                 canvas.toBlob((blob) => {
@@ -383,7 +395,8 @@
             <div id="zip"></div>
             <button id="deleteAddressButton">Delete my address 😢</button>
         </div>
-        <button id="addressButton">Show my postcards :)</button>
+        <br>
+        <button id="postcardsButton">Hide my postcards 💌</button>
         <div id="postcardsDiv">
             <ul id="postcardslist" class="postcardslist">
             </ul>
@@ -397,7 +410,7 @@
             </div>
             <div><button id="crop">Crop</button></div>
             <canvas id="canvas"></canvas>
-            <div><button id="upload">Upload</button></div>
+            <div><button id="selectPhotoButton">Select</button></div>
         </div>
         <input type="file" id="postcardFileInput" />
         <textarea id="backTextArea">
