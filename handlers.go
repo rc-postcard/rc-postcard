@@ -21,6 +21,9 @@ type User struct {
 	Email string `json:"email"`
 }
 
+//go:embed static
+var staticFiles embed.FS
+
 //go:embed home.html
 //go:embed no-address-home.html
 //go:embed back-of-4x6-postcard-1.html
