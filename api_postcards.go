@@ -76,30 +76,6 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 
 	fileBytes, err := ioutil.ReadAll(file)
 
-	// // read all of the contents of our uploaded file into a byte array
-
-	// // Decoding gives you an Image.
-	// // If you have an io.Reader already, you can give that to Decode
-	// // without reading it into a []byte.
-	// image, _, err := image.Decode(file)
-	// // check err
-	// if err != nil {
-	// 	log.Printf("Error decoding image: %v\n", err)
-	// 	http.Error(w, "Bad Request", http.StatusBadRequest)
-	// 	return
-	// }
-
-	// newImage := resize.Resize(
-	// 	1875,
-	// 	1275,
-	// 	image,
-	// 	resize.Lanczos3,
-	// )
-
-	// Encode uses a Writer, use a Buffer if you need the raw []byte
-	// var fileBytes bytes.Buffer
-	// err = jpeg.Encode(&fileBytes, newImage, nil)
-
 	// check err
 	if err != nil {
 		log.Println(err)
