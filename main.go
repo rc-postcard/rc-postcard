@@ -43,9 +43,14 @@ func main() {
 	}
 	defer db.Close()
 
+	var staticFS = http.FS(staticFiles)
+	fs := http.FileServer(staticFS)
+
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/login", serveLogin)
 	http.HandleFunc("/auth", serveAuth)
+	http.Handle("/static/", fs)
+
 	http.Handle("/addresses", authMiddleware(http.HandlerFunc(serveAddress)))
 	http.Handle("/postcards", authMiddleware(http.HandlerFunc(servePostcards)))
 	http.Handle("/contacts", authMiddleware(http.HandlerFunc(serveContacts)))

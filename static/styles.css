@@ -1,0 +1,148 @@
+* {
+    box-sizing: border-box;
+    color: #333333;
+    font-family: "Comic Sans MS", "Comic Sans", cursive;
+}
+
+body {
+    position: relative;
+}
+
+input {
+    display: block;
+    font-size: 1.05rem;
+    width: 33rem;
+    padding: 10px;
+    border-radius: .25rem;
+    border: solid 1px #8c8c8c;
+    margin: 0;
+    margin-bottom: 0.75rem;
+}
+
+label {
+    display: block;
+    font-size: 1.1rem;
+    margin: 20px 0 5px 0;
+}
+
+button {
+    background-color: #0594d8;
+    color: #ffffff;
+    border-color: #ffffff;
+    font-size: 1.1rem;
+    margin-top: 10px;
+    /* width: 100px; */
+    padding: 0.5rem;
+    border-radius: 8px;
+}
+
+textarea {
+    width: 33rem;
+    height: 300px;
+}
+
+h2 {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    /* font-family: 'Source Sans Pro', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif; */
+    color: #71abbd;
+    margin-bottom: -0.25rem;
+    margin-top: 2rem;
+    font-weight: bold;
+    font-style: italic;
+    font-size: 2rem;
+    text-decoration: underline;
+    text-decoration-color: lightblue;
+    text-decoration-thickness: 3px;
+}
+
+h3 {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    color: #626a6a;
+    margin-bottom: 0.5rem;
+    margin-top: 1.75rem;
+    font-weight: normal;
+    font-style: italic;
+    font-size: 1.5rem;
+}
+
+h6 {
+    margin-bottom: 1.5rem;
+    margin-top: -0.5rem;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-family: 'Source Sans Pro', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+    font-size: 0.85rem;
+    color:#8c8c8c;
+    font-weight: normal;
+}
+
+.wrapper {
+    position: relative;
+    max-width: 50rem;
+    margin: auto;
+}
+
+.postcardImageCropper {
+    top: 0;
+    left: 0;
+    position: absolute;
+    width: calc(100vw - 8rem);
+    max-width: 50rem;
+    margin: 4rem;
+    margin-left: 1rem;
+    padding: 3rem;
+    background-color: white;
+    border-radius: 8px;
+    border: 4px solid grey;
+    box-shadow: 5px 5px 10px lightgrey;
+}
+
+.postcardImageCropper img {
+    width: 100%;
+}
+
+.cropperWrapper {
+    position: relative;
+}
+
+.cropper {
+    top: 0;
+    left: 0;
+    position: absolute;
+    border: 4px solid chartreuse;
+    cursor: move;
+}
+
+.cropper .rightBottomCorner {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    width: 2rem;
+    height: 2rem;
+    background-color: chartreuse;
+    cursor: nwse-resize;
+}
+
+.postcardslist {
+    padding: 0;
+}
+
+.postcardslist li {
+    list-style: none;
+    border: 1px solid grey;
+    background-color: lightblue;
+}
+
+.postcardslist li:nth-child(2n + 1) {
+    background-color: lavender;
+}
+
+.postcardslist li:not(:last-child) {
+    border-bottom: unset;
+}
+
+.postcardDiv {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    grid-gap: 4rem;
+    padding: 0.5rem 1rem;
+}
