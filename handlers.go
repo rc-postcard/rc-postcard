@@ -23,6 +23,7 @@ type User struct {
 
 //go:embed static
 var staticFiles embed.FS
+var favicon = template.Must(template.ParseFS(staticFiles, "static/favicon.ico"))
 
 //go:embed home.html
 //go:embed no-address-home.html
