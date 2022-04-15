@@ -51,6 +51,11 @@ func main() {
 	http.HandleFunc("/auth", serveAuth)
 	http.Handle("/static/", fs)
 
+	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		favicon.Execute(w, nil)
+		return
+	})
+
 	http.Handle("/addresses", authMiddleware(http.HandlerFunc(serveAddress)))
 	http.Handle("/postcards", authMiddleware(http.HandlerFunc(servePostcards)))
 	http.Handle("/contacts", authMiddleware(http.HandlerFunc(serveContacts)))
