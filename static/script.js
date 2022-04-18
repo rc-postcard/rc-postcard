@@ -208,7 +208,10 @@ window.onload = function () {
         }
         let formData = new FormData()
         formData.append("front-postcard-file", photo)
-        formData.append("back", backTextArea.value)
+        var backText = backTextArea.value;
+        backText = backText.replace(/( )/gm, '&#32;');
+        backText = backText.replace(/(\r\n|\n|\r)/gm, '<br />');
+        formData.append("back", backText)
         fetch("/postcards?isPreview=true&toRecurseId=0", { method: "POST", body: formData }).then(response =>
             response.json()
         ).then(data => {
