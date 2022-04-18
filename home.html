@@ -58,9 +58,15 @@
             </h6>
             <select id="recipientSelector" name="Recipient" id="receipients">
             </select>
-            <br><br>
+            <br>
+            <div>
+                <div id="cannotSendPhysicalPostcardDiv" style="display: none;">
+                    <h4>User is not eligible to recieve physical postcards. Encourage them to update current address and specify "Eligible for shipping" at https://rc-postcard.fly.dev.</h4>
+                </div>
+            </div>
         </div>
-        <button id="submitPostcard">Looks good, submit!</button>
+        <button id="submitPostcard">Send Digital Postcard 🖥</button>
+        <button id="submitPhysicalPostcard" disabled>Send Physical Postcard ✉️ (__ credits remaining)</button>
         <label id="submitPostcardStatusLabel"></label>
 
         <div>Made with <span style="font-size: 1.4rem;">💌</span> at the Recurse Center.</div>
