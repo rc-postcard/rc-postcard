@@ -13,26 +13,23 @@ def main():
 
     r = requests.get('http://recurse.com/api/v1/profiles?access_token=' + RC_ACCESS_TOKEN + '&scope=current&limit=50')
     for user in r.json():
-        # print(user["id"], user["email"], user["name"])
+        
+        address = lob.Address.create(
+            description=user["name"],
+            name=user["name"],
+            email=user["email"],
+            address_line1='397 Bridge Street',
+            address_city='Brooklyn',
+            address_state='NY',
+            address_zip='11201',
+            address_country='US',
+            metadata={
+                'rc_id': user["id"],
+                'test': "test_2"
+            }
+        )
 
-        # address = lob.Address.create(
-        #     description=user["name"],
-        #     name=user["name"],
-        #     email=user["email"],
-        #     address_line1='397 Bridge Street',
-        #     address_city='Brooklyn',
-        #     address_state='NY',
-        #     address_zip='11201',
-        #     address_country='US',
-        #     metadata={
-        #         'rc_id': user["id"],
-        #         'test': "test_1"
-        #     }
-        # )
-
-        # address_id = address["id"]
-
-        address_id = 'adr_ff162719136e63dd'
+        address_id = address["id"]
 
         print("INSERT INTO user_info (recurse_id, lob_address_id, user_name, user_email) VALUES ({0}, \'{1}\', \'{2}\', \'{3}\') ON CONFLICT (recurse_id) DO UPDATE SET lob_address_id = excluded.lob_address_id;".format(
             user["id"], address_id, user["name"], user["email"]
