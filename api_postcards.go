@@ -97,10 +97,16 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rcAddressId, err := postgresClient.getLobAddressId(recurseCenterRecurseId)
+	rcAddressId, _, numCredits, err := postgresClient.getUserInfo(user.Id)
 	if err != nil {
 		log.Printf("Error getting recurse address: %v\n", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if mode == "physical_send" && numCredits <= 0 {
+		log.Printf("Credits less than or equal 0 or there was an error: %v\n", err)
+		http.Error(w, "Credits error", http.StatusPaymentRequired)
 		return
 	}
 
@@ -114,15 +120,6 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		recipientAddressId = rcAddressId
-	}
-
-	if mode == "physical_send" {
-		credits, err := postgresClient.getCredits(user.Id)
-		if err != nil || credits <= 0 {
-			log.Printf("Credits less than or equal 0 or there was an error: %v\n", err)
-			http.Error(w, "Credits error", http.StatusPaymentRequired)
-			return
-		}
 	}
 
 	lobCreatePostcardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, backTpl.String(), mode, user.Id, toRecurseId)
@@ -150,7 +147,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if mode == "physical_send" {
-		// decrement credits
+		// TODO get after set
 		err = postgresClient.decrementCredits(user.Id)
 		if err != nil {
 			log.Println(err)
@@ -158,12 +155,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		credits, err := postgresClient.getCredits(user.Id)
-		if err != nil {
-			log.Println(err)
-			credits = -1
-		}
-		createPostcardResponse.Credits = credits
+		createPostcardResponse.Credits = numCredits - 1
 	}
 
 	resp, err := JSONMarshal(createPostcardResponse)
