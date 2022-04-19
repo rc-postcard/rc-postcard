@@ -18,50 +18,6 @@ type Lob struct {
 	httpClient *http.Client
 }
 
-type LobGetAddressResponse struct {
-	Name           string `json:"name"`
-	AddressLine1   string `json:"address_line1"`
-	AddressLine2   string `json:"address_line2"`
-	AddressCity    string `json:"address_city"`
-	AddressState   string `json:"address_state"`
-	AddressZip     string `json:"address_zip"`
-	AddressCountry string `json:"address_country"`
-}
-
-type LobDeleteAddressResponse struct {
-	AddressId string `json:"id"`
-	Deleted   bool   `json:"deleted"`
-}
-
-type LobCreateAddressRequestMetadata struct {
-	RCId string `json:"rc_id"`
-}
-
-type LobCreateAddressRequest struct {
-	Name         string                          `json:"name"`
-	AddressLine1 string                          `json:"address_line1"`
-	AddressLine2 string                          `json:"address_line2"`
-	AddressCity  string                          `json:"address_city"`
-	AddressState string                          `json:"address_state"`
-	AddressZip   string                          `json:"address_zip"`
-	Metadata     LobCreateAddressRequestMetadata `json:"metadata"`
-}
-
-type LobCreateAddressResponse struct {
-	AddressId    string `json:"id"`
-	Name         string `json:"name"`
-	AddressLine1 string `json:"address_line1"`
-	AddressLine2 string `json:"address_line2"`
-	AddressCity  string `json:"address_city"`
-	AddressState string `json:"address_state"`
-	AddressZip   string `json:"address_zip"`
-}
-
-type LobCreatePostcardResponse struct {
-	Url     string `json:"url"`
-	Credits int    `json:"credits"`
-}
-
 type LobError struct {
 	Message    string `json:"message"`
 	StatusCode int    `json:"status_code"`
@@ -73,27 +29,6 @@ type LobErrorResponse struct {
 	LobError LobError `json:"error"`
 }
 
-type LobCreatePostcardMetadata struct {
-	ToRcId   string `json:"to_rc_id"`
-	FromRcId string `json:"from_rc_id"`
-}
-
-type LobGetPostcardsResponse struct {
-	Data []LobPostcard `json:"data"`
-}
-
-type LobMetadata struct {
-	ToRcId   string `json:"to_rc_id"`
-	FromRcId string `json:"from_rc_id"`
-}
-
-type LobPostcard struct {
-	Id          string      `json:"id"`
-	Url         string      `json:"url"`
-	Metadata    LobMetadata `json:"metadata"`
-	DateCreated time.Time   `json:"date_created"`
-}
-
 const lobAddressBaseUrl = "https://api.lob.com"
 const lobVersion = "v1"
 const addressesRoute = "addresses"
@@ -103,6 +38,18 @@ func NewLob(httpClient *http.Client) *Lob {
 	return &Lob{
 		httpClient: httpClient,
 	}
+}
+
+type LobGetPostcardsResponse struct {
+	Data []struct {
+		Id       string `json:"id"`
+		Url      string `json:"url"`
+		Metadata struct {
+			ToRcId   string `json:"to_rc_id"`
+			FromRcId string `json:"from_rc_id"`
+		} `json:"metadata"`
+		DateCreated time.Time `json:"date_created"`
+	} `json:"data"`
 }
 
 func (l *Lob) GetPostcards(recipientRecurseId int) (*LobGetPostcardsResponse, error) {
@@ -130,6 +77,16 @@ func (l *Lob) GetPostcards(recipientRecurseId int) (*LobGetPostcardsResponse, er
 	return &getPostcardsResponse, nil
 }
 
+type LobGetAddressResponse struct {
+	Name           string `json:"name"`
+	AddressLine1   string `json:"address_line1"`
+	AddressLine2   string `json:"address_line2"`
+	AddressCity    string `json:"address_city"`
+	AddressState   string `json:"address_state"`
+	AddressZip     string `json:"address_zip"`
+	AddressCountry string `json:"address_country"`
+}
+
 func (l *Lob) GetAddress(lobAddressId string) (*LobGetAddressResponse, error) {
 	getAddressUrl := fmt.Sprintf("%s/%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute, lobAddressId)
 	req, err := http.NewRequest("GET", getAddressUrl, nil)
@@ -155,6 +112,11 @@ func (l *Lob) GetAddress(lobAddressId string) (*LobGetAddressResponse, error) {
 	return &getAddressResponse, nil
 }
 
+type LobDeleteAddressResponse struct {
+	AddressId string `json:"id"`
+	Deleted   bool   `json:"deleted"`
+}
+
 func (l *Lob) DeleteAddress(lobAddressId string) error {
 	deleteAddressUrl := fmt.Sprintf("%s/%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute, lobAddressId)
 	req, err := http.NewRequest("DELETE", deleteAddressUrl, nil)
@@ -178,6 +140,30 @@ func (l *Lob) DeleteAddress(lobAddressId string) error {
 	log.Println(deleteAddressResponse)
 
 	return nil
+}
+
+type LobCreateAddressRequestMetadata struct {
+	RCId string `json:"rc_id"`
+}
+
+type LobCreateAddressRequest struct {
+	Name         string                          `json:"name"`
+	AddressLine1 string                          `json:"address_line1"`
+	AddressLine2 string                          `json:"address_line2"`
+	AddressCity  string                          `json:"address_city"`
+	AddressState string                          `json:"address_state"`
+	AddressZip   string                          `json:"address_zip"`
+	Metadata     LobCreateAddressRequestMetadata `json:"metadata"`
+}
+
+type LobCreateAddressResponse struct {
+	AddressId    string `json:"id"`
+	Name         string `json:"name"`
+	AddressLine1 string `json:"address_line1"`
+	AddressLine2 string `json:"address_line2"`
+	AddressCity  string `json:"address_city"`
+	AddressState string `json:"address_state"`
+	AddressZip   string `json:"address_zip"`
 }
 
 func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string, rcId int) (*LobCreateAddressResponse, error) {
@@ -219,6 +205,15 @@ func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCo
 	}
 
 	return &createAddressResponse, nil
+}
+
+type LobCreatePostcardMetadata struct {
+	ToRcId   string `json:"to_rc_id"`
+	FromRcId string `json:"from_rc_id"`
+}
+
+type LobCreatePostcardResponse struct {
+	Url string `json:"url"`
 }
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
