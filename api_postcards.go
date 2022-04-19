@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	_ "image/png"
 	"io/ioutil"
 	"log"
 	"net/http"
