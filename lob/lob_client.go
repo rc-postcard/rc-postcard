@@ -218,7 +218,7 @@ type LobCreatePostcardResponse struct {
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, mode string, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
+func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, useProudctionKey bool, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -258,7 +258,7 @@ func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage
 	}
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 	var authHeader string
-	if mode == "physical_send" {
+	if useProudctionKey {
 		// TODO replace with real API keys
 		authHeader = fmt.Sprintf("Basic %s",
 			base64.StdEncoding.EncodeToString(
