@@ -2,7 +2,9 @@ window.onload = function () {
     const addressButton = document.getElementById('addressButton');
     const postcardsButton = document.getElementById('postcardsButton');
     const postcardsDiv = document.getElementById('postcardsDiv');
-    const deleteAddressButton = document.getElementById('deleteAddressButton');
+    // const deleteAddressButton = document.getElementById('deleteAddressButton');
+    const editAddressButton = document.getElementById('editAddressButton');
+    const submitAddress = document.getElementById('submitAddress');
     const addressDiv = document.getElementById('addressDiv')
     const postcardImageInput = document.getElementById("postcardFileInput")
     const cropButton = document.getElementById("crop")
@@ -19,10 +21,12 @@ window.onload = function () {
     let contactMapping = {};
     let photo;
     let credits = 0;
+    let address;
 
     fetch("/addresses").then(response =>
         response.json()
     ).then(data => {
+        address = data;
         document.getElementById("name").innerText = data["name"]
         document.getElementById("address1").innerText = data["address_line1"]
         document.getElementById("address2").innerText = data["address_line2"]
@@ -319,10 +323,49 @@ window.onload = function () {
         
     })
 
-    deleteAddressButton.addEventListener('click', function () {
-        fetch("/addresses", { method: "DELETE" }).then(response => {
-            window.location.replace(window.location.href);
-            return;
-        });
+    editAddressButton.addEventListener('click', function () {
+        if (document.getElementById('editAddressDiv').style.display === "none") {
+            document.getElementById('showAddressDiv').style.display = "none";
+            document.getElementById('editAddressDiv').style.display = "block";
+
+            editAddressButton.innerText = "Cancel editing";
+
+            document.getElementById("editName").value = address["name"]
+            document.getElementById("editAddress1").value = address["address_line1"]
+            document.getElementById("editAddress2").value = address["address_line2"]
+            document.getElementById("editCity").value = address["address_city"]
+            document.getElementById("editState").value = address["address_state"]
+            document.getElementById("editZip").value = address["address_zip"]
+            document.getElementById("editReceivePhysicalMail").checked = address["acceptsPhysicalMail"]
+        } else {
+            document.getElementById('showAddressDiv').style.display = "block";
+            document.getElementById('editAddressDiv').style.display = "none";
+        }
     })
+
+    submitAddress.addEventListener('click', function () {
+        address = {
+            "name": document.getElementById("editName").value,
+            "address1": document.getElementById("editAddress1").value,
+            "address2": document.getElementById("editAddress2").value,
+            "city": document.getElementById("editCity").value,
+            "state": document.getElementById("editState").value,
+            "zip": document.getElementById("editZip").value,
+            "acceptsPhysicalMail": document.getElementById("editReceivePhysicalMail").checked
+        }
+        body = new URLSearchParams(address)
+
+        fetch("/addresses", { method: "POST", body: body }).then(response =>
+            response.json()
+        ).then(data => {
+            window.location.replace(window.location.href);
+        });
+    });
+
+    // deleteAddressButton.addEventListener('click', function () {
+    //     fetch("/addresses", { method: "DELETE" }).then(response => {
+    //         window.location.replace(window.location.href);
+    //         return;
+    //     });
+    // })
 }

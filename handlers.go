@@ -25,7 +25,6 @@ type User struct {
 var staticFiles embed.FS
 var favicon = template.Must(template.ParseFS(staticFiles, "static/favicon.ico"))
 var home = template.Must(template.ParseFS(staticFiles, "static/home.html"))
-var noAddressHome = template.Must(template.ParseFS(staticFiles, "static/no-address-home.html"))
 var backOfPostcard = template.Must(template.ParseFS(staticFiles, "static/back-of-4x6-postcard-1.html"))
 
 var (

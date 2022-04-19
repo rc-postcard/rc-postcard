@@ -19,10 +19,19 @@ input {
     margin-bottom: 0.75rem;
 }
 
+.checkbox input {
+    display: unset;
+    width: unset;
+}
+
 label {
     display: block;
     font-size: 1.1rem;
     margin: 20px 0 5px 0;
+}
+
+.checkbox label {
+    display: unset;
 }
 
 button {
