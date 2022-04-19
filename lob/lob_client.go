@@ -1,4 +1,4 @@
-package main
+package lob
 
 import (
 	"bytes"
@@ -14,17 +14,11 @@ import (
 	"time"
 )
 
-type LobClient struct {
+type Lob struct {
+	httpClient *http.Client
 }
 
-var lobClient = &LobClient{}
-
-const lobAddressBaseUrl = "https://api.lob.com"
-const lobVersion = "v1"
-const addressesRoute = "addresses"
-const postcardsRoute = "postcards"
-
-type GetAddressResponse struct {
+type LobGetAddressResponse struct {
 	Name           string `json:"name"`
 	AddressLine1   string `json:"address_line1"`
 	AddressLine2   string `json:"address_line2"`
@@ -34,26 +28,26 @@ type GetAddressResponse struct {
 	AddressCountry string `json:"address_country"`
 }
 
-type DeleteAddressResponse struct {
+type LobDeleteAddressResponse struct {
 	AddressId string `json:"id"`
 	Deleted   bool   `json:"deleted"`
 }
 
-type CreateAddressRequestMetadata struct {
+type LobCreateAddressRequestMetadata struct {
 	RCId string `json:"rc_id"`
 }
 
-type CreateAddressRequest struct {
-	Name         string                       `json:"name"`
-	AddressLine1 string                       `json:"address_line1"`
-	AddressLine2 string                       `json:"address_line2"`
-	AddressCity  string                       `json:"address_city"`
-	AddressState string                       `json:"address_state"`
-	AddressZip   string                       `json:"address_zip"`
-	Metadata     CreateAddressRequestMetadata `json:"metadata"`
+type LobCreateAddressRequest struct {
+	Name         string                          `json:"name"`
+	AddressLine1 string                          `json:"address_line1"`
+	AddressLine2 string                          `json:"address_line2"`
+	AddressCity  string                          `json:"address_city"`
+	AddressState string                          `json:"address_state"`
+	AddressZip   string                          `json:"address_zip"`
+	Metadata     LobCreateAddressRequestMetadata `json:"metadata"`
 }
 
-type CreateAddressResponse struct {
+type LobCreateAddressResponse struct {
 	AddressId    string `json:"id"`
 	Name         string `json:"name"`
 	AddressLine1 string `json:"address_line1"`
@@ -63,7 +57,7 @@ type CreateAddressResponse struct {
 	AddressZip   string `json:"address_zip"`
 }
 
-type CreatePostcardResponse struct {
+type LobCreatePostcardResponse struct {
 	Url     string `json:"url"`
 	Credits int    `json:"credits"`
 }
@@ -79,28 +73,39 @@ type LobErrorResponse struct {
 	LobError LobError `json:"error"`
 }
 
-type CreatePostcardMetadata struct {
+type LobCreatePostcardMetadata struct {
 	ToRcId   string `json:"to_rc_id"`
 	FromRcId string `json:"from_rc_id"`
 }
 
-type GetPostcardsResponse struct {
-	Data []Postcard `json:"data"`
+type LobGetPostcardsResponse struct {
+	Data []LobPostcard `json:"data"`
 }
 
-type Metadata struct {
+type LobMetadata struct {
 	ToRcId   string `json:"to_rc_id"`
 	FromRcId string `json:"from_rc_id"`
 }
 
-type Postcard struct {
-	Id          string    `json:"id"`
-	Url         string    `json:"url"`
-	Metadata    Metadata  `json:"metadata"`
-	DateCreated time.Time `json:"date_created"`
+type LobPostcard struct {
+	Id          string      `json:"id"`
+	Url         string      `json:"url"`
+	Metadata    LobMetadata `json:"metadata"`
+	DateCreated time.Time   `json:"date_created"`
 }
 
-func (*LobClient) GetPostcards(recipientRecurseId int) (*GetPostcardsResponse, error) {
+const lobAddressBaseUrl = "https://api.lob.com"
+const lobVersion = "v1"
+const addressesRoute = "addresses"
+const postcardsRoute = "postcards"
+
+func NewLob(httpClient *http.Client) *Lob {
+	return &Lob{
+		httpClient: httpClient,
+	}
+}
+
+func (l *Lob) GetPostcards(recipientRecurseId int) (*LobGetPostcardsResponse, error) {
 	getPostcardsUrl := fmt.Sprintf("%s/%s/%s?metadata[to_rc_id]=%d", lobAddressBaseUrl, lobVersion, postcardsRoute, recipientRecurseId)
 	req, err := http.NewRequest("GET", getPostcardsUrl, nil)
 	if err != nil {
@@ -110,13 +115,13 @@ func (*LobClient) GetPostcards(recipientRecurseId int) (*GetPostcardsResponse, e
 
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
 
-	resp, err := client.Do(req)
+	resp, err := l.httpClient.Do(req)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	var getPostcardsResponse GetPostcardsResponse
+	var getPostcardsResponse LobGetPostcardsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&getPostcardsResponse); err != nil {
 		log.Println(err)
 		return nil, err
@@ -125,7 +130,7 @@ func (*LobClient) GetPostcards(recipientRecurseId int) (*GetPostcardsResponse, e
 	return &getPostcardsResponse, nil
 }
 
-func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
+func (l *Lob) GetAddress(lobAddressId string) (*LobGetAddressResponse, error) {
 	getAddressUrl := fmt.Sprintf("%s/%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute, lobAddressId)
 	req, err := http.NewRequest("GET", getAddressUrl, nil)
 	if err != nil {
@@ -135,7 +140,7 @@ func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
 
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
 
-	resp, err := client.Do(req)
+	resp, err := l.httpClient.Do(req)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -143,14 +148,14 @@ func (*LobClient) GetAddress(lobAddressId string) (*GetAddressResponse, error) {
 
 	// read body
 	defer resp.Body.Close()
-	var getAddressResponse GetAddressResponse
+	var getAddressResponse LobGetAddressResponse
 	if err := json.NewDecoder(resp.Body).Decode(&getAddressResponse); err != nil {
 		return nil, err
 	}
 	return &getAddressResponse, nil
 }
 
-func (*LobClient) DeleteAddress(lobAddressId string) error {
+func (l *Lob) DeleteAddress(lobAddressId string) error {
 	deleteAddressUrl := fmt.Sprintf("%s/%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute, lobAddressId)
 	req, err := http.NewRequest("DELETE", deleteAddressUrl, nil)
 	if err != nil {
@@ -159,13 +164,13 @@ func (*LobClient) DeleteAddress(lobAddressId string) error {
 	}
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
 
-	resp, err := client.Do(req)
+	resp, err := l.httpClient.Do(req)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
 
-	var deleteAddressResponse DeleteAddressResponse
+	var deleteAddressResponse LobDeleteAddressResponse
 	if err := json.NewDecoder(resp.Body).Decode(&deleteAddressResponse); err != nil {
 		log.Println(err)
 		return err
@@ -175,15 +180,15 @@ func (*LobClient) DeleteAddress(lobAddressId string) error {
 	return nil
 }
 
-func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string, rcId int) (*CreateAddressResponse, error) {
-	createAddressRequest := &CreateAddressRequest{
+func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string, rcId int) (*LobCreateAddressResponse, error) {
+	createAddressRequest := &LobCreateAddressRequest{
 		Name:         name,
 		AddressLine1: addressLine1,
 		AddressLine2: addressLine2,
 		AddressCity:  city,
 		AddressState: state,
 		AddressZip:   zipCode,
-		Metadata:     CreateAddressRequestMetadata{RCId: strconv.Itoa(rcId)},
+		Metadata:     LobCreateAddressRequestMetadata{RCId: strconv.Itoa(rcId)},
 	}
 
 	marshalledCreateAddressRequest, err := json.Marshal(createAddressRequest)
@@ -201,13 +206,13 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
 
-	resp, err := client.Do(req)
+	resp, err := l.httpClient.Do(req)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	var createAddressResponse CreateAddressResponse
+	var createAddressResponse LobCreateAddressResponse
 	if err := json.NewDecoder(resp.Body).Decode(&createAddressResponse); err != nil {
 		log.Println(err)
 		return nil, err
@@ -218,7 +223,7 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, mode string, fromRcId, toRcId int) (*CreatePostcardResponse, *LobError) {
+func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, mode string, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -231,7 +236,7 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 	_ = writer.WriteField("to", toLobAddressId)
 	_ = writer.WriteField("from", fromLobAddressId)
 
-	postcardMetadata, err := json.Marshal(CreatePostcardMetadata{FromRcId: strconv.Itoa(fromRcId), ToRcId: strconv.Itoa(toRcId)})
+	postcardMetadata, err := json.Marshal(LobCreatePostcardMetadata{FromRcId: strconv.Itoa(fromRcId), ToRcId: strconv.Itoa(toRcId)})
 	if err != nil {
 		log.Println(err)
 		return nil, &LobError{Err: err}
@@ -270,7 +275,7 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 	}
 	req.Header.Set("Authorization", authHeader)
 
-	resp, err := client.Do(req)
+	resp, err := l.httpClient.Do(req)
 	if err != nil {
 		return nil, &LobError{Err: err}
 	}
@@ -279,7 +284,7 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 
 	if resp.StatusCode == 200 {
 		// update to read from actual response
-		var createPostcardResponse CreatePostcardResponse
+		var createPostcardResponse LobCreatePostcardResponse
 		if err := json.NewDecoder(resp.Body).Decode(&createPostcardResponse); err != nil {
 			return nil, &LobError{Err: err}
 		}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 // pacCache is a personal access token cache used by the /tile API
@@ -112,6 +113,12 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 
 	name, address1, address2 := r.FormValue("name"), r.FormValue("address1"), r.FormValue("address2")
 	city, state, zip := r.FormValue("city"), r.FormValue("state"), r.FormValue("zip")
+	acceptsPhysicalMail, err := strconv.ParseBool(r.FormValue("acceptsPhysicalMail"))
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Error parsing form. Make sure to speicfy field acceptsPhysicalMail", http.StatusNotFound)
+		return
+	}
 
 	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip, user.Id)
 	if err != nil {
@@ -120,7 +127,7 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = postgresClient.insertUser(user.Id, createAddressResponse.AddressId, user.Name, user.Email); err != nil {
+	if err = postgresClient.insertUser(user.Id, createAddressResponse.AddressId, user.Name, user.Email, acceptsPhysicalMail); err != nil {
 		log.Println(err)
 		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
 		return
