@@ -8,7 +8,7 @@ build: $(BIN)
 run: $(BIN)
 	./$<
 
-$(BIN): $(SRC) go.mod go.sum static/
+$(BIN): $(SRC) go.mod go.sum ./static/*
 	$(GO) build
 
 clean:
