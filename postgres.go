@@ -68,7 +68,7 @@ func (*PostgresClient) decrementCredits(recurseId int) error {
 func (*PostgresClient) getContacts() ([]*Contact, error) {
 
 	var contacts []*Contact
-	rows, err := db.Query("SELECT recurse_id, accept_physical_mail, user_name, user_email FROM user_info")
+	rows, err := db.Query("SELECT recurse_id, accepts_physical_mail, user_name, user_email FROM user_info")
 	if err != nil {
 		log.Printf("QueryRow failed: %v\n", err)
 		return nil, err
@@ -76,7 +76,7 @@ func (*PostgresClient) getContacts() ([]*Contact, error) {
 	defer rows.Close()
 	for rows.Next() {
 		contact := new(Contact)
-		err := rows.Scan(&contact.RecurseId, &contact.AcceptPhysicalMail, &contact.Name, &contact.Email)
+		err := rows.Scan(&contact.RecurseId, &contact.AcceptsPhysicalMail, &contact.Name, &contact.Email)
 		if err != nil {
 			log.Printf("Reading row failed: %v\n", err)
 			return nil, err

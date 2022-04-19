@@ -10,10 +10,10 @@ import (
 var pacCache = map[string]*User{}
 
 type Contact struct {
-	RecurseId          int    `json:"recurseId"`
-	Name               string `json:"name"`
-	Email              string `json:"email"`
-	AcceptPhysicalMail bool   `json:"acceptsPhysicalMail"`
+	RecurseId           int    `json:"recurseId"`
+	Name                string `json:"name"`
+	Email               string `json:"email"`
+	AcceptsPhysicalMail bool   `json:"acceptsPhysicalMail"`
 }
 
 type ContactsResponse struct {

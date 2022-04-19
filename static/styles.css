@@ -146,8 +146,3 @@ h6 {
     grid-gap: 4rem;
     padding: 0.5rem 1rem;
 }
-
-[type="checkbox"]
-{
-    vertical-align:middle;
-}

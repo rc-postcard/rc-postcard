@@ -15,8 +15,10 @@ window.onload = function () {
     const backTextArea = document.getElementById("backTextArea")
     const postcardslist = document.getElementById("postcardslist")
     const cannotSendPhysicalPostcardDiv = document.getElementById("cannotSendPhysicalPostcardDiv")
+    const physicalPostcardErrorLabel = document.getElementById("physicalPostcardErrorLabel")
     let contactMapping = {};
     let photo;
+    let credits = 0;
 
     fetch("/addresses").then(response =>
         response.json()
@@ -32,7 +34,7 @@ window.onload = function () {
     fetch("/contacts").then(response =>
         response.json()
     ).then(data => {
-        let credits = data["credits"]
+        credits = data["credits"]
         submitPhysicalPostcardButton.innerText = "Send Physical Postcard ✉️ (" + credits + " credits remaining)"
 
         let contacts = data["contacts"]
@@ -234,12 +236,17 @@ window.onload = function () {
 
     recipientSelector.addEventListener("change", function() {
         let recipientId = recipientSelector.value
-        if (contactMapping[recipientId]["acceptsPhysicalMail"]) {
+        if (contactMapping[recipientId]["acceptsPhysicalMail"] && credits > 0) {
             cannotSendPhysicalPostcardDiv.style.display = "none";
             submitPhysicalPostcardButton.disabled = false
             submitPhysicalPostcardButton.style.backgroundColor = "#0594d8"
         }
         else {
+            if (credits <= 0) {
+                physicalPostcardErrorLabel.innerText = "No credits available to send physical postcards."
+            } else {
+                physicalPostcardErrorLabel.innerText = "User is not eligible to recieve physical postcards."
+            }
             cannotSendPhysicalPostcardDiv.style.display = "block";
             submitPhysicalPostcardButton.disabled = true
             submitPhysicalPostcardButton.style.backgroundColor = "gray"
@@ -296,7 +303,7 @@ window.onload = function () {
             response.json()
         ).then(data => {
             if (!data["err"] && !data["status_code"]) {
-                let credits = data["credits"]
+                credits = data["credits"]
                 submitPostcardStatusLabel.innerText = "success sending physical mail to " + receipientName + " ✅. Credits remaining: " + credits
                 submitPostcardStatusLabel.style = "background-color: green"
                 submitPhysicalPostcardButton.innerText = "Send Physical Postcard ✉️ (" + credits + " credits remaining)"
@@ -304,7 +311,11 @@ window.onload = function () {
                 submitPostcardStatusLabel.innerText = data["message"]
                 submitPostcardStatusLabel.style = "background-color: red"
             }
+        }).catch(function(error) {
+            submitPostcardStatusLabel.innerText = "Error sending postcard."
+            submitPostcardStatusLabel.style = "background-color: red"
         })
+        
     })
 
     deleteAddressButton.addEventListener('click', function () {
