@@ -104,9 +104,16 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rcAddressId, _, numCredits, err := postgresClient.getUserInfo(user.Id)
+	rcAddressId, err := postgresClient.getLobAddressId(recurseCenterRecurseId)
 	if err != nil {
 		log.Printf("Error getting recurse address: %v\n", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	numCredits, err := postgresClient.getCredits(user.Id)
+	if err != nil {
+		log.Printf("Error getting user credits: %v\n", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
