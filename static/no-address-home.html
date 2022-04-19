@@ -14,7 +14,6 @@
                     "city": document.getElementById("city").value,
                     "state": document.getElementById("state").value,
                     "zip": document.getElementById("zip").value,
-                    "acceptsPhysicalMail": document.getElementById("receivePhysicalMail").checked
                 })
 
                 fetch("/addresses", { method: "POST", body: body }).then(response =>
@@ -85,10 +84,6 @@
         <div>
             <label for="zip">Zip</label>
             <input id="zip" name="zip">
-        </div>
-        <div>
-            <input type="checkbox" id="receivePhysicalMail" name="receivePhysicalMail">
-            <label for="receivePhysicalMail">I am able and would like to receive mail at this U.S.A. address.</label>
         </div>
         <input id="submitAddress" type="submit" value="Submit">
     </div>
