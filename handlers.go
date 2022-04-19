@@ -85,8 +85,29 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 
 	lobAddressId, err := postgresClient.getLobAddressId(session.User.Id)
 	if err != nil || lobAddressId == "" {
-		noAddressHome.Execute(w, nil)
-		return
+		createAddressResponse, err := lobClient.CreateAddress(
+			session.User.Name,
+			"397 Bridge Street",
+			"",
+			"Brooklyn",
+			"NY",
+			"11201",
+			session.User.Id)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Error creating address", http.StatusInternalServerError)
+			return
+		}
+
+		if err = postgresClient.insertUser(session.User.Id,
+			createAddressResponse.AddressId,
+			session.User.Name,
+			session.User.Email,
+			false); err != nil {
+			log.Println(err)
+			http.Error(w, "Error setting address in database", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	home.Execute(w, nil)
