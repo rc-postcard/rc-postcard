@@ -15,9 +15,9 @@ window.onload = function () {
     const backTextArea = document.getElementById("backTextArea")
     const postcardslist = document.getElementById("postcardslist")
     const cannotSendPhysicalPostcardDiv = document.getElementById("cannotSendPhysicalPostcardDiv")
-    let contacts;
     let contactMapping = {};
     let photo;
+    let credits = -1;
 
     fetch("/addresses").then(response =>
         response.json()
@@ -33,7 +33,10 @@ window.onload = function () {
     fetch("/contacts").then(response =>
         response.json()
     ).then(data => {
-        contacts = data["contacts"]
+        credits = data["credits"]
+        submitPhysicalPostcardButton.innerText = "Send Physical Postcard ✉️ (" + credits + " credits remaining)"
+
+        let contacts = data["contacts"]
         contacts.forEach(contact => {
             var opt = document.createElement('option')
             opt.value = contact["recurseId"]
@@ -235,10 +238,12 @@ window.onload = function () {
         if (contactMapping[recipientId]["acceptsPhysicalMail"]) {
             cannotSendPhysicalPostcardDiv.style.display = "none";
             submitPhysicalPostcardButton.disabled = false
+            submitPhysicalPostcardButton.style.backgroundColor = "#0594d8"
         }
         else {
             cannotSendPhysicalPostcardDiv.style.display = "block";
             submitPhysicalPostcardButton.disabled = true
+            submitPhysicalPostcardButton.style.backgroundColor = "gray"
         }
 
     })
@@ -289,6 +294,7 @@ window.onload = function () {
         formData.append("front-postcard-file", photo)
         formData.append("back", backTextArea.value)
         fetch("/postcards?isPreview=false&mode=physical&toRecurseId=" + recipientId, { method: "POST", body: formData }).then(response =>
+            // TODO return remaining credits
             response.json()
         ).then(data => {
             if (!data["err"] && !data["status_code"]) {

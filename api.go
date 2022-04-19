@@ -18,12 +18,15 @@ type Contact struct {
 
 type ContactsResponse struct {
 	Contacts []*Contact `json:"contacts"`
+	Credits  int        `json:"credits"`
 }
 
 func serveContacts(w http.ResponseWriter, r *http.Request) {
 	if !verifyRoute(w, r, http.MethodGet, "/contacts") {
 		return
 	}
+
+	var user *User = r.Context().Value(userContextKey).(*User)
 
 	contacts, err := postgresClient.getContacts()
 	if err != nil {
@@ -32,7 +35,13 @@ func serveContacts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := JSONMarshal(ContactsResponse{Contacts: contacts})
+	credits, err := postgresClient.getCredits(user.Id)
+	if err != nil {
+		log.Println(err)
+		credits = 0
+	}
+
+	resp, err := JSONMarshal(ContactsResponse{Contacts: contacts, Credits: credits})
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

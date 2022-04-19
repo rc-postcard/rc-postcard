@@ -45,6 +45,17 @@ func (*PostgresClient) getLobAddressId(recurseId int) (string, error) {
 
 	return lobAddressId, nil
 }
+
+func (*PostgresClient) getCredits(recurseId int) (int, error) {
+	var credits int
+	if err := db.QueryRow("SELECT num_credits FROM user_info WHERE recurse_id=$1", recurseId).Scan(&credits); err != nil {
+		log.Printf("QueryRow failed: %v\n", err)
+		return -1, err
+	}
+
+	return credits, nil
+}
+
 func (*PostgresClient) getContacts() ([]*Contact, error) {
 
 	var contacts []*Contact
