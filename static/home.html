@@ -11,14 +11,48 @@
     <div class="wrapper">
         <button id="addressButton">Show my address :)</button>
         <div style="display: none;" id="addressDiv">
-            <div id="name"></div>
-            <div id="address1"></div>
-            <div id="address2"></div>
-            <div id="city"></div>
-            <div id="state"></div>
-            <div id="zip"></div>
-            <div id="acceptsPhysicalMail"></div>
-            <button id="deleteAddressButton">Delete my address</button>
+            <div id="showAddressDiv">
+                <div id="name"></div>
+                <div id="address1"></div>
+                <div id="address2"></div>
+                <div id="city"></div>
+                <div id="state"></div>
+                <div id="zip"></div>
+                <div id="acceptsPhysicalMail"></div>
+            </div>
+            <div style="display: none;" id="editAddressDiv">
+                <div>
+                    <label for="name">Name</label>
+                    <input id="editName" name="name">
+                </div>
+                <div>
+                    <label for="address1">Address 1</label>
+                    <input id="editAddress1" name="address1">
+                </div>
+                <div>
+                    <label for="address2">Address 2</label>
+                    <input id="editAddress2" name="address2">
+                </div>
+                <div>
+                    <label for="city">City</label>
+                    <input id="editCity" name="city">
+                </div>
+                <div>
+                    <label for="state">State</label>
+                    <input id="editState" name="state">
+                </div>
+                <div>
+                    <label for="zip">Zip</label>
+                    <input id="editZip" name="zip">
+                </div>
+                <div class="checkbox">
+                    <input type="checkbox" id="editReceivePhysicalMail" name="receivePhysicalMail">
+                    <label for="receivePhysicalMail">I am able and would like to receive mail at this U.S.A. address.</label>
+                </div>
+                <input id="submitAddress" type="submit" value="Submit">
+            </div>
+            <button id="editAddressButton">Edit my address</button>
+            <!-- <button id="deleteAddressButton">Delete my account</button> -->
         </div>
         <br>
         <button id="postcardsButton">Hide my postcards 💌</button>
