@@ -9,6 +9,14 @@ import (
 	"strconv"
 )
 
+const (
+	DigitalPreview string = "digital_preview"
+	DigitalSend    string = "digital_send"
+	PhysicalSend   string = "physical_send"
+)
+
+var validSendPostcardModes = []string{DigitalPreview, DigitalSend, PhysicalSend}
+
 func servePostcards(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		sendPostcards(w, r)
@@ -62,8 +70,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	mode := query.Get("mode")
 	toRecurseId, errToRecurseId := strconv.Atoi(query.Get("toRecurseId"))
-	// TODO formalize this
-	if (mode != "digital_send" && mode != "digital_preview" && mode != "physical_send") || errToRecurseId != nil {
+	if (!contains(validSendPostcardModes, mode)) || errToRecurseId != nil {
 		log.Printf("Missing or malformed query parameter %s %v\n", mode, errToRecurseId)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
@@ -97,15 +104,21 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rcAddressId, err := postgresClient.getLobAddressId(recurseCenterRecurseId)
+	rcAddressId, _, numCredits, err := postgresClient.getUserInfo(user.Id)
 	if err != nil {
 		log.Printf("Error getting recurse address: %v\n", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
+	if mode == PhysicalSend && numCredits <= 0 {
+		log.Printf("Credits less than or equal 0 or there was an error: %v\n", err)
+		http.Error(w, "Credits error", http.StatusPaymentRequired)
+		return
+	}
+
 	var recipientAddressId string
-	if mode == "digital_send" || mode == "physical_send" {
+	if mode == DigitalSend || mode == PhysicalSend {
 		recipientAddressId, err = postgresClient.getLobAddressId(toRecurseId)
 		if err != nil {
 			log.Println(err)
@@ -116,16 +129,12 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		recipientAddressId = rcAddressId
 	}
 
-	if mode == "physical_send" {
-		credits, err := postgresClient.getCredits(user.Id)
-		if err != nil || credits <= 0 {
-			log.Printf("Credits less than or equal 0 or there was an error: %v\n", err)
-			http.Error(w, "Credits error", http.StatusPaymentRequired)
-			return
-		}
+	useProductionKey := false
+	if mode == PhysicalSend {
+		useProductionKey = true
 	}
 
-	lobCreatePostcardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, backTpl.String(), mode, user.Id, toRecurseId)
+	lobCreatePostcardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, backTpl.String(), useProductionKey, user.Id, toRecurseId)
 	if lobError != nil && (lobError.Err != nil || lobError.StatusCode/100 >= 5) {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -145,12 +154,12 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 
 	createPostcardResponse := &CreatePostcardResponse{Credits: 0}
 
-	if mode == "digital_preview" {
+	if mode == DigitalPreview {
 		createPostcardResponse.Url = lobCreatePostcardResponse.Url
 	}
 
-	if mode == "physical_send" {
-		// decrement credits
+	if mode == PhysicalSend {
+		// TODO get after set, potential race condition
 		err = postgresClient.decrementCredits(user.Id)
 		if err != nil {
 			log.Println(err)
@@ -158,12 +167,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		credits, err := postgresClient.getCredits(user.Id)
-		if err != nil {
-			log.Println(err)
-			credits = -1
-		}
-		createPostcardResponse.Credits = credits
+		createPostcardResponse.Credits = numCredits - 1
 	}
 
 	resp, err := JSONMarshal(createPostcardResponse)
@@ -186,4 +190,14 @@ func JSONMarshal(t interface{}) ([]byte, error) {
 	encoder.SetEscapeHTML(false)
 	err := encoder.Encode(t)
 	return buffer.Bytes(), err
+}
+
+func contains(arr []string, s string) bool {
+	for _, elem := range arr {
+		if elem == s {
+			return true
+		}
+	}
+
+	return false
 }

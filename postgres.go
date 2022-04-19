@@ -37,10 +37,9 @@ func (*PostgresClient) setupPostgresConnection() error {
 }
 
 func (*PostgresClient) getUserInfo(recurseId int) (lobAddressId string, acceptsPhysicalMail bool, numCredits int, err error) {
-
-	if err := db.QueryRow("SELECT lob_address_id, accepts_physical_mail, num_credits FROM user_info WHERE recurse_id = $1", recurseId).Scan(&lobAddressId, &acceptsPhysicalMail, &numCredits); err != nil {
+	if err = db.QueryRow("SELECT lob_address_id, accepts_physical_mail, num_credits FROM user_info WHERE recurse_id = $1", recurseId).Scan(&lobAddressId, &acceptsPhysicalMail, &numCredits); err != nil {
 		log.Printf("QueryRow failed: %v\n", err)
-		return "", false, -1, err
+		return "", false, 0, err
 	}
 
 	return
