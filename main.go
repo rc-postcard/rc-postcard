@@ -6,11 +6,15 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	lob "github.com/rc-postcard/rc-postcard/lob"
 )
 
 var client *http.Client = &http.Client{
 	Timeout: time.Second * 20,
 }
+
+var lobClient *lob.Lob
 
 var addr = flag.String("addr", ":8080", "http service address")
 
@@ -42,6 +46,8 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+
+	lobClient = lob.NewLob(client)
 
 	var staticFS = http.FS(staticFiles)
 	fs := http.FileServer(staticFS)

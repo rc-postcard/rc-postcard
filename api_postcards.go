@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	_ "image/png"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -46,6 +45,11 @@ func getPostcards(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 	return
+}
+
+type CreatePostcardResponse struct {
+	Url     string `json:"url"`
+	Credits int    `json:"credits"`
 }
 
 func sendPostcards(w http.ResponseWriter, r *http.Request) {
@@ -121,7 +125,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	createPostCardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, backTpl.String(), mode, user.Id, toRecurseId)
+	lobCreatePostcardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, backTpl.String(), mode, user.Id, toRecurseId)
 	if lobError != nil && (lobError.Err != nil || lobError.StatusCode/100 >= 5) {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -139,8 +143,10 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if mode == "digital_send" || mode == "physical_send" {
-		createPostCardResponse.Url = ""
+	createPostcardResponse := &CreatePostcardResponse{Credits: 0}
+
+	if mode == "digital_preview" {
+		createPostcardResponse.Url = lobCreatePostcardResponse.Url
 	}
 
 	if mode == "physical_send" {
@@ -157,10 +163,10 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			credits = -1
 		}
-		createPostCardResponse.Credits = credits
+		createPostcardResponse.Credits = credits
 	}
 
-	resp, err := JSONMarshal(createPostCardResponse)
+	resp, err := JSONMarshal(createPostcardResponse)
 
 	if err != nil {
 		log.Println(err)
