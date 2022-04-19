@@ -29,6 +29,7 @@ window.onload = function () {
         document.getElementById("city").innerText = data["address_city"]
         document.getElementById("state").innerText = data["address_state"]
         document.getElementById("zip").innerText = data["address_zip"]
+        document.getElementById("acceptsPhysicalMail").innerText = data["acceptsPhysicalMail"]
     })
 
     fetch("/contacts").then(response =>
