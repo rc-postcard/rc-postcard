@@ -8,7 +8,7 @@ window.onload = function () {
     const cropButton = document.getElementById("crop")
     const submitPreviewPhotoButton = document.getElementById('submitPreviewPhoto');
     const submitPostcardButton = document.getElementById('submitPostcard')
-    const submitPhysicalPostcard = document.getElementById('submitPhysicalPostcard')
+    const submitPhysicalPostcardButton = document.getElementById("submitPhysicalPostcardButton")
     const recipientSelector = document.getElementById('recipientSelector')
     const submitPreviewStatusLabel = document.getElementById('submitPreviewStatusLabel')
     const submitPostcardStatusLabel = document.getElementById('submitPostcardStatusLabel')
@@ -33,7 +33,6 @@ window.onload = function () {
     fetch("/contacts").then(response =>
         response.json()
     ).then(data => {
-        console.log(data)
         contacts = data["contacts"]
         contacts.forEach(contact => {
             var opt = document.createElement('option')
@@ -235,9 +234,11 @@ window.onload = function () {
         let recipientId = recipientSelector.value
         if (contactMapping[recipientId]["acceptsPhysicalMail"]) {
             cannotSendPhysicalPostcardDiv.style.display = "none";
+            submitPhysicalPostcardButton.disabled = false
         }
         else {
             cannotSendPhysicalPostcardDiv.style.display = "block";
+            submitPhysicalPostcardButton.disabled = true
         }
 
     })
@@ -271,7 +272,7 @@ window.onload = function () {
         })
     })
 
-    submitPhysicalPostcard.addEventListener('click', function () {
+    submitPhysicalPostcardButton.addEventListener('click', function () {
         let recipientId = recipientSelector.value
         let receipientName = recipientSelector.options[recipientSelector.selectedIndex].innerText
         if (!photo) {
