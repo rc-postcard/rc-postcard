@@ -147,7 +147,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if mode == "physical_send" {
-		// TODO get after set
+		// TODO get after set, potential race condition
 		err = postgresClient.decrementCredits(user.Id)
 		if err != nil {
 			log.Println(err)
