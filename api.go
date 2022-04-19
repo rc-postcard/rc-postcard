@@ -133,9 +133,7 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Hide address id from user
-	createAddressResponse.AddressId = ""
-	resp, err := JSONMarshal(createAddressResponse)
+	resp, err := JSONMarshal(new(struct{}))
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
