@@ -24,14 +24,9 @@ type User struct {
 //go:embed static
 var staticFiles embed.FS
 var favicon = template.Must(template.ParseFS(staticFiles, "static/favicon.ico"))
-
-//go:embed home.html
-//go:embed no-address-home.html
-//go:embed back-of-4x6-postcard-1.html
-var resources embed.FS
-var home = template.Must(template.ParseFS(resources, "home.html"))
-var noAddressHome = template.Must(template.ParseFS(resources, "no-address-home.html"))
-var backOfPostcard = template.Must(template.ParseFS(resources, "back-of-4x6-postcard-1.html"))
+var home = template.Must(template.ParseFS(staticFiles, "static/home.html"))
+var noAddressHome = template.Must(template.ParseFS(staticFiles, "static/no-address-home.html"))
+var backOfPostcard = template.Must(template.ParseFS(staticFiles, "static/back-of-4x6-postcard-1.html"))
 
 var (
 	// sessions stores user session information for browser login
