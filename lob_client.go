@@ -64,7 +64,8 @@ type CreateAddressResponse struct {
 }
 
 type CreatePostcardResponse struct {
-	Url string `json:"url"`
+	Url     string `json:"url"`
+	Credits int    `json:"credits"`
 }
 
 type LobError struct {
@@ -217,7 +218,7 @@ func (*LobClient) CreateAddress(name, addressLine1, addressLine2, city, state, z
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, isPreview bool, fromRcId, toRcId int) (*CreatePostcardResponse, *LobError) {
+func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, mode string, fromRcId, toRcId int) (*CreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -257,7 +258,8 @@ func (*LobClient) CreatePostCard(fromLobAddressId, toLobAddressId string, frontI
 	}
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 	var authHeader string
-	if isPreview {
+	if mode == "physical_send" {
+		// TODO replace with real API keys
 		authHeader = fmt.Sprintf("Basic %s",
 			base64.StdEncoding.EncodeToString(
 				[]byte(fmt.Sprintf("%s:", os.Getenv("LOB_API_TEST_KEY")))))

@@ -56,6 +56,15 @@ func (*PostgresClient) getCredits(recurseId int) (int, error) {
 	return credits, nil
 }
 
+func (*PostgresClient) decrementCredits(recurseId int) error {
+	if _, err := db.Exec(
+		"UPDATE user_info SET num_credits = num_credits - 1 WHERE recurse_id = $1",
+		recurseId); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (*PostgresClient) getContacts() ([]*Contact, error) {
 
 	var contacts []*Contact

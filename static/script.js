@@ -17,7 +17,6 @@ window.onload = function () {
     const cannotSendPhysicalPostcardDiv = document.getElementById("cannotSendPhysicalPostcardDiv")
     let contactMapping = {};
     let photo;
-    let credits = -1;
 
     fetch("/addresses").then(response =>
         response.json()
@@ -33,7 +32,7 @@ window.onload = function () {
     fetch("/contacts").then(response =>
         response.json()
     ).then(data => {
-        credits = data["credits"]
+        let credits = data["credits"]
         submitPhysicalPostcardButton.innerText = "Send Physical Postcard ✉️ (" + credits + " credits remaining)"
 
         let contacts = data["contacts"]
@@ -217,7 +216,7 @@ window.onload = function () {
         backText = backText.replace(/( (?= ))/gm, '&nbsp;');
         backText = backText.replace(/(\r\n|\n|\r)/gm, '<br />');
         formData.append("back", backText)
-        fetch("/postcards?isPreview=true&toRecurseId=0", { method: "POST", body: formData }).then(response =>
+        fetch("/postcards?mode=digital_preview&toRecurseId=0", { method: "POST", body: formData }).then(response =>
             response.json()
         ).then(data => {
             if (!data["err"] && !data["status_code"]) {
@@ -264,7 +263,7 @@ window.onload = function () {
         let formData = new FormData()
         formData.append("front-postcard-file", photo)
         formData.append("back", backTextArea.value)
-        fetch("/postcards?isPreview=false&toRecurseId=" + recipientId, { method: "POST", body: formData }).then(response =>
+        fetch("/postcards?mode=digital_send&toRecurseId=" + recipientId, { method: "POST", body: formData }).then(response =>
             response.json()
         ).then(data => {
             if (!data["err"] && !data["status_code"]) {
@@ -293,13 +292,14 @@ window.onload = function () {
         let formData = new FormData()
         formData.append("front-postcard-file", photo)
         formData.append("back", backTextArea.value)
-        fetch("/postcards?isPreview=false&mode=physical&toRecurseId=" + recipientId, { method: "POST", body: formData }).then(response =>
-            // TODO return remaining credits
+        fetch("/postcards?mode=physical_send&toRecurseId=" + recipientId, { method: "POST", body: formData }).then(response =>
             response.json()
         ).then(data => {
             if (!data["err"] && !data["status_code"]) {
-                submitPostcardStatusLabel.innerText = "success sending physical mail to " + receipientName + " ✅. Credits remaining: __"
+                let credits = data["credits"]
+                submitPostcardStatusLabel.innerText = "success sending physical mail to " + receipientName + " ✅. Credits remaining: " + credits
                 submitPostcardStatusLabel.style = "background-color: green"
+                submitPhysicalPostcardButton.innerText = "Send Physical Postcard ✉️ (" + credits + " credits remaining)"
             } else {
                 submitPostcardStatusLabel.innerText = data["message"]
                 submitPostcardStatusLabel.style = "background-color: red"
