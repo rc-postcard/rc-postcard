@@ -57,10 +57,17 @@
                 <a target="_blank" href="https://rc-postcard.fly.dev">rc-postcard.fly.dev</a>
             </h6>
             <select id="recipientSelector" name="Recipient" id="receipients">
+                <option disabled selected value> -- Select a recipient -- </option>
             </select>
-            <br><br>
+            <br>
+            <div>
+                <div id="cannotSendPhysicalPostcardDiv" style="display: none;">
+                    <h4 id="physicalPostcardErrorLabel"></h4>
+                </div>
+            </div>
         </div>
-        <button id="submitPostcard">Looks good, submit!</button>
+        <button id="submitPostcard">Send Digital Postcard 🖥</button>
+        <button id="submitPhysicalPostcardButton" style="background-color: gray;" disabled>Send Physical Postcard ✉️ (__ credits remaining)</button>
         <label id="submitPostcardStatusLabel"></label>
 
         <div>Made with <span style="font-size: 1.4rem;">💌</span> at the Recurse Center.</div>
