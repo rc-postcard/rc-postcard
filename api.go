@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 // pacCache is a personal access token cache used by the /tile API
@@ -112,6 +113,12 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 
 	name, address1, address2 := r.FormValue("name"), r.FormValue("address1"), r.FormValue("address2")
 	city, state, zip := r.FormValue("city"), r.FormValue("state"), r.FormValue("zip")
+	acceptsPhysicalMail, err := strconv.ParseBool(r.FormValue("acceptsPhysicalMail"))
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Error parsing form. Make sure to speicfy field acceptsPhysicalMail", http.StatusNotFound)
+		return
+	}
 
 	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip, user.Id)
 	if err != nil {
@@ -120,15 +127,13 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = postgresClient.insertUser(user.Id, createAddressResponse.AddressId, user.Name, user.Email); err != nil {
+	if err = postgresClient.insertUser(user.Id, createAddressResponse.AddressId, user.Name, user.Email, acceptsPhysicalMail); err != nil {
 		log.Println(err)
 		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
 		return
 	}
 
-	// Hide address id from user
-	createAddressResponse.AddressId = ""
-	resp, err := JSONMarshal(createAddressResponse)
+	resp, err := JSONMarshal(new(struct{}))
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -141,6 +146,17 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+type GetAddressResponse struct {
+	Name                string `json:"name"`
+	AddressLine1        string `json:"address_line1"`
+	AddressLine2        string `json:"address_line2"`
+	AddressCity         string `json:"address_city"`
+	AddressState        string `json:"address_state"`
+	AddressZip          string `json:"address_zip"`
+	AddressCountry      string `json:"address_country"`
+	AcceptsPhysicalMail bool   `json:"acceptsPhysicalMail"`
+}
+
 func getAddress(w http.ResponseWriter, r *http.Request) {
 	if !verifyRoute(w, r, http.MethodGet, "/addresses") {
 		return
@@ -148,7 +164,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 
 	var user *User = r.Context().Value(userContextKey).(*User)
 
-	lobAddressId, err := postgresClient.getLobAddressId(user.Id)
+	lobAddressId, acceptsPhysicalMail, _, err := postgresClient.getUserInfo(user.Id)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "No address found that corresponds to this user.", http.StatusNotFound)
@@ -163,7 +179,17 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := json.Marshal(getAddressResponse)
+	resp, err := json.Marshal(&GetAddressResponse{
+		Name:                getAddressResponse.Name,
+		AddressLine1:        getAddressResponse.AddressLine1,
+		AddressLine2:        getAddressResponse.AddressLine2,
+		AddressCity:         getAddressResponse.AddressCity,
+		AddressState:        getAddressResponse.AddressState,
+		AddressZip:          getAddressResponse.AddressZip,
+		AddressCountry:      getAddressResponse.AddressCountry,
+		AcceptsPhysicalMail: acceptsPhysicalMail,
+	})
+
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
