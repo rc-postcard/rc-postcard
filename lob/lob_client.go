@@ -14,6 +14,15 @@ import (
 	"time"
 )
 
+const (
+	RecurseAddressLine1   = "397 Bridge Street"
+	RecurseAddressLine2   = ""
+	RecurseAddressCity    = "Brooklyn"
+	RecurseAddressState   = "NY"
+	RecurseAddressZip     = "11201"
+	RecurseAddressCountry = "US"
+)
+
 type Lob struct {
 	httpClient *http.Client
 }

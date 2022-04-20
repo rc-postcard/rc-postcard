@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	lob "github.com/rc-postcard/rc-postcard/lob"
 )
 
 // pacCache is a personal access token cache used by the /tile API
@@ -159,7 +161,6 @@ type GetAddressResponse struct {
 	AcceptsPhysicalMail bool   `json:"acceptsPhysicalMail"`
 }
 
-// TODO add err handling for get address
 func getAddress(w http.ResponseWriter, r *http.Request) {
 	if !verifyRoute(w, r, http.MethodGet, "/addresses") {
 		return
@@ -175,23 +176,38 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// use lobClient to get address
-	getAddressResponse, err := lobClient.GetAddress(lobAddressId)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
+	var getAddressResponse GetAddressResponse
+	if lobAddressId != "" {
+		lobAddressResponse, err := lobClient.GetAddress(lobAddressId)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		getAddressResponse = GetAddressResponse{
+			Name:                lobAddressResponse.Name,
+			AddressLine1:        lobAddressResponse.AddressLine1,
+			AddressLine2:        lobAddressResponse.AddressLine2,
+			AddressCity:         lobAddressResponse.AddressCity,
+			AddressState:        lobAddressResponse.AddressState,
+			AddressZip:          lobAddressResponse.AddressZip,
+			AddressCountry:      lobAddressResponse.AddressCountry,
+			AcceptsPhysicalMail: acceptsPhysicalMail,
+		}
+	} else {
+		getAddressResponse = GetAddressResponse{
+			Name:                user.Name,
+			AddressLine1:        lob.RecurseAddressLine1,
+			AddressLine2:        lob.RecurseAddressLine2,
+			AddressCity:         lob.RecurseAddressCity,
+			AddressState:        lob.RecurseAddressState,
+			AddressZip:          lob.RecurseAddressZip,
+			AddressCountry:      lob.RecurseAddressCountry,
+			AcceptsPhysicalMail: false,
+		}
 	}
 
-	resp, err := json.Marshal(&GetAddressResponse{
-		Name:                getAddressResponse.Name,
-		AddressLine1:        getAddressResponse.AddressLine1,
-		AddressLine2:        getAddressResponse.AddressLine2,
-		AddressCity:         getAddressResponse.AddressCity,
-		AddressState:        getAddressResponse.AddressState,
-		AddressZip:          getAddressResponse.AddressZip,
-		AddressCountry:      getAddressResponse.AddressCountry,
-		AcceptsPhysicalMail: acceptsPhysicalMail,
-	})
+	resp, err := json.Marshal(&getAddressResponse)
 
 	if err != nil {
 		log.Println(err)
