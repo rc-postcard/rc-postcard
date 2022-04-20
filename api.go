@@ -120,7 +120,7 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip, user.Id)
+	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip, user.Id, false)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Error creating address", http.StatusInternalServerError)

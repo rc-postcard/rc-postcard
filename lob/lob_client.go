@@ -166,7 +166,7 @@ type LobCreateAddressResponse struct {
 	AddressZip   string `json:"address_zip"`
 }
 
-func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string, rcId int) (*LobCreateAddressResponse, error) {
+func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string, rcId int, useProductionKey bool) (*LobCreateAddressResponse, error) {
 	createAddressRequest := &LobCreateAddressRequest{
 		Name:         name,
 		AddressLine1: addressLine1,
@@ -190,7 +190,12 @@ func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCo
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+
+	if useProductionKey {
+		req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_LIVE_KEY")+":")))
+	} else {
+		req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+	}
 
 	resp, err := l.httpClient.Do(req)
 	if err != nil {
@@ -218,7 +223,7 @@ type LobCreatePostcardResponse struct {
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, useProudctionKey bool, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
+func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, useProductionKey bool, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -258,7 +263,7 @@ func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage
 	}
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 	var authHeader string
-	if useProudctionKey {
+	if useProductionKey {
 		// TODO replace with real API keys
 		authHeader = fmt.Sprintf("Basic %s",
 			base64.StdEncoding.EncodeToString(

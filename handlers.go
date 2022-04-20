@@ -91,7 +91,8 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 			"Brooklyn",
 			"NY",
 			"11201",
-			session.User.Id)
+			session.User.Id,
+			false)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "Error creating address", http.StatusInternalServerError)
