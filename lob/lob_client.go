@@ -230,9 +230,18 @@ type LobCreatePostcardResponse struct {
 	Url string `json:"url"`
 }
 
+type LobAddress struct {
+	Name         string `json:"name"`
+	AddressLine1 string `json:"address_line1"`
+	AddressLine2 string `json:"address_line2"`
+	AddressCity  string `json:"address_city"`
+	AddressState string `json:"address_state"`
+	AddressZip   string `json:"address_zip"`
+}
+
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, useProductionKey bool, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
+func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress, frontImage []byte, back string, useProductionKey bool, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -242,8 +251,42 @@ func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage
 	back = fmt.Sprintf("<body>%s</body", back)
 
 	_ = writer.WriteField("back", back)
-	_ = writer.WriteField("to", toLobAddressId)
-	_ = writer.WriteField("from", fromLobAddressId)
+
+	toLobAddressBytes, err := json.Marshal(toLobAddress)
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
+
+	toPart, err := writer.CreateFormField("to")
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
+
+	_, err = toPart.Write(toLobAddressBytes)
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
+
+	fromLobAddressBytes, err := json.Marshal(fromLobAddress)
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
+
+	fromPart, err := writer.CreateFormField("from")
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
+
+	_, err = fromPart.Write(fromLobAddressBytes)
+	if err != nil {
+		log.Println(err)
+		return nil, &LobError{Err: err}
+	}
 
 	postcardMetadata, err := json.Marshal(LobCreatePostcardMetadata{FromRcId: strconv.Itoa(fromRcId), ToRcId: strconv.Itoa(toRcId)})
 	if err != nil {

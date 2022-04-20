@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	lob "github.com/rc-postcard/rc-postcard/lob"
 )
 
 const (
@@ -104,12 +106,12 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rcAddressId, err := postgresClient.getLobAddressId(recurseCenterRecurseId)
-	if err != nil {
-		log.Printf("Error getting recurse address: %v\n", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
+	// rcAddressId, err := postgresClient.getLobAddressId(recurseCenterRecurseId)
+	// if err != nil {
+	// 	log.Printf("Error getting recurse address: %v\n", err)
+	// 	http.Error(w, "Internal server error", http.StatusInternalServerError)
+	// 	return
+	// }
 
 	numCredits, err := postgresClient.getCredits(user.Id)
 	if err != nil {
@@ -124,24 +126,42 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var recipientAddressId string
-	if mode == DigitalSend || mode == PhysicalSend {
-		recipientAddressId, err = postgresClient.getLobAddressId(toRecurseId)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-	} else {
-		recipientAddressId = rcAddressId
-	}
+	// var recipientAddressId string
+	// if mode == PhysicalSend {
+	// 	recipientAddressId, err = postgresClient.getLobAddressId(toRecurseId)
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// } else {
+	// 	recipientAddressId = rcAddressId
+	// }
 
 	useProductionKey := false
 	if mode == PhysicalSend {
 		useProductionKey = true
 	}
 
-	lobCreatePostcardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, backTpl.String(), useProductionKey, user.Id, toRecurseId)
+	toAddress := lob.LobAddress{
+		Name:         "Recurse Center",
+		AddressLine1: lob.RecurseAddressLine1,
+		AddressLine2: lob.RecurseAddressLine2,
+		AddressCity:  lob.RecurseAddressCity,
+		AddressState: lob.RecurseAddressState,
+		AddressZip:   lob.RecurseAddressZip,
+	}
+
+	fromAddress := lob.LobAddress{
+		Name:         user.Name,
+		AddressLine1: lob.RecurseAddressLine1,
+		AddressLine2: lob.RecurseAddressLine2,
+		AddressCity:  lob.RecurseAddressCity,
+		AddressState: lob.RecurseAddressState,
+		AddressZip:   lob.RecurseAddressZip,
+	}
+
+	lobCreatePostcardResponse, lobError := lobClient.CreatePostCard(toAddress, fromAddress, fileBytes, backTpl.String(), useProductionKey, user.Id, toRecurseId)
 	if lobError != nil && (lobError.Err != nil || lobError.StatusCode/100 >= 5) {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
