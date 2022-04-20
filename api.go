@@ -69,6 +69,7 @@ func serveAddress(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO err handling for nil address
 func deleteAddress(w http.ResponseWriter, r *http.Request) {
 	if !verifyRoute(w, r, http.MethodDelete, "/addresses") {
 		return
@@ -120,6 +121,7 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO update for real address
 	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip, user.Id, false)
 	if err != nil {
 		log.Println(err)
@@ -127,7 +129,7 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = postgresClient.insertUser(user.Id, createAddressResponse.AddressId, user.Name, user.Email, acceptsPhysicalMail); err != nil {
+	if err = postgresClient.updateAddress(user.Id, createAddressResponse.AddressId, acceptsPhysicalMail); err != nil {
 		log.Println(err)
 		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
 		return
@@ -157,6 +159,7 @@ type GetAddressResponse struct {
 	AcceptsPhysicalMail bool   `json:"acceptsPhysicalMail"`
 }
 
+// TODO add err handling for get address
 func getAddress(w http.ResponseWriter, r *http.Request) {
 	if !verifyRoute(w, r, http.MethodGet, "/addresses") {
 		return

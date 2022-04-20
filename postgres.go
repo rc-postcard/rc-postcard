@@ -102,14 +102,23 @@ func (*PostgresClient) getContacts() ([]*Contact, error) {
 	return contacts, nil
 }
 
-func (*PostgresClient) insertUser(recurseId int, lobAddressId, userName, userEmail string, acceptsPhysicalMail bool) error {
+func (*PostgresClient) insertUser(recurseId int, userName, userEmail string) error {
 	if _, err := db.Exec(
-		"INSERT INTO user_info (recurse_id, lob_address_id, accepts_physical_mail, user_name, user_email) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (recurse_id) DO UPDATE SET lob_address_id = excluded.lob_address_id, accepts_physical_mail = excluded.accepts_physical_mail, user_name = excluded.user_name, user_email = excluded.user_email",
+		"INSERT INTO user_info (recurse_id, user_name, user_email) VALUES ($1, $2, $3)",
 		recurseId,
-		lobAddressId,
-		acceptsPhysicalMail,
 		userName,
 		userEmail); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (*PostgresClient) updateAddress(recurseId int, lobAddressId string, acceptsPhysicalMail bool) error {
+	if _, err := db.Exec(
+		"UPDATE user_info SET lob_address_id = $2, accepts_physical_mail = $3 WHERE recurse_id = $1",
+		recurseId,
+		lobAddressId,
+		acceptsPhysicalMail); err != nil {
 		return err
 	}
 	return nil
