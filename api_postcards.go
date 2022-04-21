@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	lob "github.com/rc-postcard/rc-postcard/lob"
 )
 
 const (
@@ -104,44 +106,79 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rcAddressId, err := postgresClient.getLobAddressId(recurseCenterRecurseId)
-	if err != nil {
-		log.Printf("Error getting recurse address: %v\n", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	numCredits, err := postgresClient.getCredits(user.Id)
-	if err != nil {
-		log.Printf("Error getting user credits: %v\n", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	if mode == PhysicalSend && numCredits <= 0 {
-		log.Printf("Credits less than or equal 0 or there was an error: %v\n", err)
-		http.Error(w, "Credits error", http.StatusPaymentRequired)
-		return
-	}
-
-	var recipientAddressId string
-	if mode == DigitalSend || mode == PhysicalSend {
-		recipientAddressId, err = postgresClient.getLobAddressId(toRecurseId)
+	if mode == PhysicalSend {
+		// verify credits
+		numCredits, err := postgresClient.getCredits(user.Id)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			log.Printf("Error getting user credits: %v\n", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
-	} else {
-		recipientAddressId = rcAddressId
+
+		if numCredits <= 0 {
+			log.Printf("Credits less than or equal 0 or there was an error: %v\n", err)
+			http.Error(w, "Credits error", http.StatusPaymentRequired)
+			return
+		}
 	}
 
-	useProductionKey := false
+	fromAddress := lob.LobAddress{
+		Name:         user.Name,
+		AddressLine1: lob.RecurseAddressLine1,
+		AddressLine2: lob.RecurseAddressLine2,
+		AddressCity:  lob.RecurseAddressCity,
+		AddressState: lob.RecurseAddressState,
+		AddressZip:   lob.RecurseAddressZip,
+	}
+
+	var toAddress lob.LobAddress
+	var useProductionKey bool
 	if mode == PhysicalSend {
+		// get sendee info
+		receipientAddressId, recipientAcceptsPhysicalMail, _, _, err := postgresClient.getUserInfo(recurseCenterRecurseId)
+		if err != nil {
+			log.Printf("Error getting recurse address: %v\n", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		if !recipientAcceptsPhysicalMail {
+			log.Printf("Recipient does not accept physical mail %v\n", err)
+			http.Error(w, "Recipient does not accept physical mail", http.StatusBadRequest)
+			return
+		}
+
+		toAddress = lob.LobAddress{AddressId: receipientAddressId}
 		useProductionKey = true
+	} else if mode == DigitalSend {
+		// get sendee info
+		_, _, _, userName, err := postgresClient.getUserInfo(toRecurseId)
+		if err != nil {
+			log.Printf("Error getting user: %v\n", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		toAddress = lob.LobAddress{
+			Name:         userName,
+			AddressLine1: lob.RecurseAddressLine1,
+			AddressLine2: lob.RecurseAddressLine2,
+			AddressCity:  lob.RecurseAddressCity,
+			AddressState: lob.RecurseAddressState,
+			AddressZip:   lob.RecurseAddressZip,
+		}
+	} else {
+		toAddress = lob.LobAddress{
+			Name:         "Recurse Center",
+			AddressLine1: lob.RecurseAddressLine1,
+			AddressLine2: lob.RecurseAddressLine2,
+			AddressCity:  lob.RecurseAddressCity,
+			AddressState: lob.RecurseAddressState,
+			AddressZip:   lob.RecurseAddressZip,
+		}
 	}
 
-	lobCreatePostcardResponse, lobError := lobClient.CreatePostCard(rcAddressId, recipientAddressId, fileBytes, backTpl.String(), useProductionKey, user.Id, toRecurseId)
+	lobCreatePostcardResponse, lobError := lobClient.CreatePostCard(toAddress, fromAddress, fileBytes, backTpl.String(), useProductionKey, user.Id, toRecurseId)
 	if lobError != nil && (lobError.Err != nil || lobError.StatusCode/100 >= 5) {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -166,7 +203,6 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if mode == PhysicalSend {
-		// TODO get after set, potential race condition
 		err = postgresClient.decrementCredits(user.Id)
 		if err != nil {
 			log.Println(err)
@@ -174,7 +210,14 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		createPostcardResponse.Credits = numCredits - 1
+		numCredits, err := postgresClient.getCredits(user.Id)
+		if err != nil {
+			log.Printf("Error getting user credits: %v\n", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		createPostcardResponse.Credits = numCredits
 	}
 
 	resp, err := JSONMarshal(createPostcardResponse)

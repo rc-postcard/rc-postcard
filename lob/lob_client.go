@@ -14,6 +14,15 @@ import (
 	"time"
 )
 
+const (
+	RecurseAddressLine1   = "397 Bridge Street"
+	RecurseAddressLine2   = ""
+	RecurseAddressCity    = "Brooklyn"
+	RecurseAddressState   = "NY"
+	RecurseAddressZip     = "11201"
+	RecurseAddressCountry = "US"
+)
+
 type Lob struct {
 	httpClient *http.Client
 }
@@ -166,7 +175,7 @@ type LobCreateAddressResponse struct {
 	AddressZip   string `json:"address_zip"`
 }
 
-func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string, rcId int) (*LobCreateAddressResponse, error) {
+func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string, rcId int, useProductionKey bool) (*LobCreateAddressResponse, error) {
 	createAddressRequest := &LobCreateAddressRequest{
 		Name:         name,
 		AddressLine1: addressLine1,
@@ -190,7 +199,12 @@ func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCo
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+
+	if useProductionKey {
+		req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_LIVE_KEY")+":")))
+	} else {
+		req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+	}
 
 	resp, err := l.httpClient.Do(req)
 	if err != nil {
@@ -216,9 +230,20 @@ type LobCreatePostcardResponse struct {
 	Url string `json:"url"`
 }
 
+type LobAddress struct {
+	AddressId      string `json:"id"`
+	Name           string `json:"name"`
+	AddressLine1   string `json:"address_line1"`
+	AddressLine2   string `json:"address_line2"`
+	AddressCity    string `json:"address_city"`
+	AddressState   string `json:"address_state"`
+	AddressZip     string `json:"address_zip"`
+	AddressCountry string `json:"address_country"`
+}
+
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage []byte, back string, useProudctionKey bool, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
+func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress, frontImage []byte, back string, useProductionKey bool, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -228,8 +253,29 @@ func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage
 	back = fmt.Sprintf("<body>%s</body", back)
 
 	_ = writer.WriteField("back", back)
-	_ = writer.WriteField("to", toLobAddressId)
-	_ = writer.WriteField("from", fromLobAddressId)
+
+	if fromLobAddress.AddressId != "" {
+		_ = writer.WriteField("from", fromLobAddress.AddressId)
+
+	} else {
+		_ = writer.WriteField("from[name]", fromLobAddress.Name)
+		_ = writer.WriteField("from[address_line1]", fromLobAddress.AddressLine1)
+		_ = writer.WriteField("from[address_line2]", fromLobAddress.AddressLine2)
+		_ = writer.WriteField("from[address_city]", fromLobAddress.AddressCity)
+		_ = writer.WriteField("from[address_state]", fromLobAddress.AddressState)
+		_ = writer.WriteField("from[address_zip]", fromLobAddress.AddressZip)
+	}
+
+	if toLobAddress.AddressId != "" {
+		_ = writer.WriteField("to", toLobAddress.AddressId)
+	} else {
+		_ = writer.WriteField("to[name]", toLobAddress.Name)
+		_ = writer.WriteField("to[address_line1]", toLobAddress.AddressLine1)
+		_ = writer.WriteField("to[address_line2]", toLobAddress.AddressLine2)
+		_ = writer.WriteField("to[address_city]", toLobAddress.AddressCity)
+		_ = writer.WriteField("to[address_state]", toLobAddress.AddressState)
+		_ = writer.WriteField("to[address_zip]", toLobAddress.AddressZip)
+	}
 
 	postcardMetadata, err := json.Marshal(LobCreatePostcardMetadata{FromRcId: strconv.Itoa(fromRcId), ToRcId: strconv.Itoa(toRcId)})
 	if err != nil {
@@ -258,7 +304,7 @@ func (l *Lob) CreatePostCard(fromLobAddressId, toLobAddressId string, frontImage
 	}
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 	var authHeader string
-	if useProudctionKey {
+	if useProductionKey {
 		// TODO replace with real API keys
 		authHeader = fmt.Sprintf("Basic %s",
 			base64.StdEncoding.EncodeToString(

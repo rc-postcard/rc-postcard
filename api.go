@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	lob "github.com/rc-postcard/rc-postcard/lob"
 )
 
 // pacCache is a personal access token cache used by the /tile API
@@ -69,6 +71,7 @@ func serveAddress(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO err handling for nil address
 func deleteAddress(w http.ResponseWriter, r *http.Request) {
 	if !verifyRoute(w, r, http.MethodDelete, "/addresses") {
 		return
@@ -120,14 +123,15 @@ func createAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip, user.Id)
+	// TODO update for real address
+	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip, user.Id, false)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Error creating address", http.StatusInternalServerError)
 		return
 	}
 
-	if err = postgresClient.insertUser(user.Id, createAddressResponse.AddressId, user.Name, user.Email, acceptsPhysicalMail); err != nil {
+	if err = postgresClient.updateAddress(user.Id, createAddressResponse.AddressId, acceptsPhysicalMail); err != nil {
 		log.Println(err)
 		http.Error(w, "Error setting address in database", http.StatusInternalServerError)
 		return
@@ -164,7 +168,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 
 	var user *User = r.Context().Value(userContextKey).(*User)
 
-	lobAddressId, acceptsPhysicalMail, _, err := postgresClient.getUserInfo(user.Id)
+	lobAddressId, acceptsPhysicalMail, _, _, err := postgresClient.getUserInfo(user.Id)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "No address found that corresponds to this user.", http.StatusNotFound)
@@ -172,23 +176,38 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// use lobClient to get address
-	getAddressResponse, err := lobClient.GetAddress(lobAddressId)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
+	var getAddressResponse GetAddressResponse
+	if lobAddressId != "" {
+		lobAddressResponse, err := lobClient.GetAddress(lobAddressId)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		getAddressResponse = GetAddressResponse{
+			Name:                lobAddressResponse.Name,
+			AddressLine1:        lobAddressResponse.AddressLine1,
+			AddressLine2:        lobAddressResponse.AddressLine2,
+			AddressCity:         lobAddressResponse.AddressCity,
+			AddressState:        lobAddressResponse.AddressState,
+			AddressZip:          lobAddressResponse.AddressZip,
+			AddressCountry:      lobAddressResponse.AddressCountry,
+			AcceptsPhysicalMail: acceptsPhysicalMail,
+		}
+	} else {
+		getAddressResponse = GetAddressResponse{
+			Name:                user.Name,
+			AddressLine1:        lob.RecurseAddressLine1,
+			AddressLine2:        lob.RecurseAddressLine2,
+			AddressCity:         lob.RecurseAddressCity,
+			AddressState:        lob.RecurseAddressState,
+			AddressZip:          lob.RecurseAddressZip,
+			AddressCountry:      lob.RecurseAddressCountry,
+			AcceptsPhysicalMail: false,
+		}
 	}
 
-	resp, err := json.Marshal(&GetAddressResponse{
-		Name:                getAddressResponse.Name,
-		AddressLine1:        getAddressResponse.AddressLine1,
-		AddressLine2:        getAddressResponse.AddressLine2,
-		AddressCity:         getAddressResponse.AddressCity,
-		AddressState:        getAddressResponse.AddressState,
-		AddressZip:          getAddressResponse.AddressZip,
-		AddressCountry:      getAddressResponse.AddressCountry,
-		AcceptsPhysicalMail: acceptsPhysicalMail,
-	})
+	resp, err := json.Marshal(&getAddressResponse)
 
 	if err != nil {
 		log.Println(err)
