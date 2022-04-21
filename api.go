@@ -107,8 +107,7 @@ func createOrUpdateAddress(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// TODO update for real address
-	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip, user.Id, false)
+	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip, user.Id, true)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Error creating address", http.StatusInternalServerError)
@@ -161,7 +160,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 
 	var getAddressResponse GetAddressResponse
 	if lobAddressId != "" {
-		lobAddressResponse, err := lobClient.GetAddress(lobAddressId, false)
+		lobAddressResponse, err := lobClient.GetAddress(lobAddressId, true)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)

@@ -83,7 +83,10 @@ window.onload = function () {
             timeDiv.innerText = time;
 
             var from_id = postcard["metadata"]["from_rc_id"]
-            var from_name = contactMapping[from_id]["name"]
+            let from_name = "Deleted User"
+            if (contactMapping[from_id]) {
+                from_name = contactMapping[from_id]["name"]
+            }
 
             var senderDiv = document.createElement('div');
             senderDiv.innerText = from_name;
@@ -115,7 +118,7 @@ window.onload = function () {
             postcardsButton.innerText = "Hide my postcards 💌"
             postcardsDiv.style.display = "block";
         } else {
-            postcardsButton.innerText = "Show my postcards :)"
+            postcardsButton.innerText = "Show my digital postcards :)"
             postcardsDiv.style.display = "none";
         }
     })

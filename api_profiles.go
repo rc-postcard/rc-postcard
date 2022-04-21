@@ -29,7 +29,7 @@ func deleteProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if lobAddressId != "" {
-		if err := lobClient.DeleteAddress(lobAddressId, false); err != nil {
+		if err := lobClient.DeleteAddress(lobAddressId, true); err != nil {
 			log.Println(err)
 			http.Error(w, "Error deleting address", http.StatusInternalServerError)
 			return

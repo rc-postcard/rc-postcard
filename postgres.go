@@ -31,6 +31,13 @@ func (*PostgresClient) setupPostgresConnection() error {
 	}
 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS user_info (recurse_id int UNIQUE NOT NULL, lob_address_id text DEFAULT '', accepts_physical_mail BOOLEAN DEFAULT FALSE, num_credits int DEFAULT 0 NOT NULL, user_name text NOT NULL, user_email text NOT NULL, batch text DEFAULT '');")
+
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec("INSERT INTO user_info (recurse_id, accepts_physical_mail, user_name, user_email) VALUES (0, TRUE, 'Recurse Id', 'admissions@recurse.com') ON CONFLICT (recurse_id) DO NOTHING;")
+
 	return err
 }
 
