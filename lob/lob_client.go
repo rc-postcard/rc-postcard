@@ -96,7 +96,7 @@ type LobGetAddressResponse struct {
 	AddressCountry string `json:"address_country"`
 }
 
-func (l *Lob) GetAddress(lobAddressId string) (*LobGetAddressResponse, error) {
+func (l *Lob) GetAddress(lobAddressId string, isLive bool) (*LobGetAddressResponse, error) {
 	getAddressUrl := fmt.Sprintf("%s/%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute, lobAddressId)
 	req, err := http.NewRequest("GET", getAddressUrl, nil)
 	if err != nil {
@@ -104,7 +104,7 @@ func (l *Lob) GetAddress(lobAddressId string) (*LobGetAddressResponse, error) {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+	setAuthHeaders(req, isLive)
 
 	resp, err := l.httpClient.Do(req)
 	if err != nil {
@@ -126,14 +126,14 @@ type LobDeleteAddressResponse struct {
 	Deleted   bool   `json:"deleted"`
 }
 
-func (l *Lob) DeleteAddress(lobAddressId string) error {
+func (l *Lob) DeleteAddress(lobAddressId string, isLive bool) error {
 	deleteAddressUrl := fmt.Sprintf("%s/%s/%s/%s", lobAddressBaseUrl, lobVersion, addressesRoute, lobAddressId)
 	req, err := http.NewRequest("DELETE", deleteAddressUrl, nil)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
-	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+	setAuthHeaders(req, isLive)
 
 	resp, err := l.httpClient.Do(req)
 	if err != nil {
@@ -175,7 +175,7 @@ type LobCreateAddressResponse struct {
 	AddressZip   string `json:"address_zip"`
 }
 
-func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string, rcId int, useProductionKey bool) (*LobCreateAddressResponse, error) {
+func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCode string, rcId int, isLive bool) (*LobCreateAddressResponse, error) {
 	createAddressRequest := &LobCreateAddressRequest{
 		Name:         name,
 		AddressLine1: addressLine1,
@@ -200,11 +200,7 @@ func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCo
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	if useProductionKey {
-		req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_LIVE_KEY")+":")))
-	} else {
-		req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
-	}
+	setAuthHeaders(req, isLive)
 
 	resp, err := l.httpClient.Do(req)
 	if err != nil {
@@ -243,7 +239,7 @@ type LobAddress struct {
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress, frontImage []byte, back string, useProductionKey bool, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
+func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress, frontImage []byte, back string, isLive bool, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -303,18 +299,7 @@ func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress,
 		return nil, &LobError{Err: err}
 	}
 	req.Header.Add("Content-Type", writer.FormDataContentType())
-	var authHeader string
-	if useProductionKey {
-		// TODO replace with real API keys
-		authHeader = fmt.Sprintf("Basic %s",
-			base64.StdEncoding.EncodeToString(
-				[]byte(fmt.Sprintf("%s:", os.Getenv("LOB_API_TEST_KEY")))))
-	} else {
-		authHeader = fmt.Sprintf("Basic %s",
-			base64.StdEncoding.EncodeToString(
-				[]byte(fmt.Sprintf("%s:", os.Getenv("LOB_API_TEST_KEY")))))
-	}
-	req.Header.Set("Authorization", authHeader)
+	setAuthHeaders(req, isLive)
 
 	resp, err := l.httpClient.Do(req)
 	if err != nil {
@@ -340,4 +325,18 @@ func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress,
 
 		return nil, &lobErrorResponse.LobError
 	}
+}
+
+func setAuthHeaders(req *http.Request, isLive bool) {
+	var authHeader string
+	if isLive {
+		authHeader = fmt.Sprintf("Basic %s",
+			base64.StdEncoding.EncodeToString(
+				[]byte(fmt.Sprintf("%s:", os.Getenv("LOB_API_TEST_KEY")))))
+	} else {
+		authHeader = fmt.Sprintf("Basic %s",
+			base64.StdEncoding.EncodeToString(
+				[]byte(fmt.Sprintf("%s:", os.Getenv("LOB_API_TEST_KEY")))))
+	}
+	req.Header.Set("Authorization", authHeader)
 }
