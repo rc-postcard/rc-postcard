@@ -42,6 +42,7 @@ const lobAddressBaseUrl = "https://api.lob.com"
 const lobVersion = "v1"
 const addressesRoute = "addresses"
 const postcardsRoute = "postcards"
+const verificationsRoute = "us_verifications"
 
 func NewLob(httpClient *http.Client) *Lob {
 	return &Lob{
@@ -199,7 +200,6 @@ func (l *Lob) CreateAddress(name, addressLine1, addressLine2, city, state, zipCo
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-
 	setAuthHeaders(req, isLive)
 
 	resp, err := l.httpClient.Do(req)
@@ -327,12 +327,79 @@ func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress,
 	}
 }
 
+type LobVerifyAddressRequest struct {
+	PrimaryLine   string `json:"primary_line"`
+	SecondaryLine string `json:"secondary_line"`
+	City          string `json:"city"`
+	State         string `json:"state"`
+	ZipCode       string `json:"zip_code"`
+}
+
+type LobVerifyAddressResponse struct {
+	Deliverability string `json:"deliverability"`
+}
+
+const (
+	Deliverable                = "deliverable"
+	DeliverableUnnecessaryUnit = "deliverable_unnecessary_unit"
+	DeliverableIncorrectUnit   = "deliverable_incorrect_unit"
+	DeliverableMissingUnit     = "deliverable_missing_unit"
+	Undeliverable              = "undeliverable"
+)
+
+func (l *Lob) VerifyAddress(addressLine1, addressLine2, city, state, zipCode string) (*LobVerifyAddressResponse, error) {
+	verifyAddressRequest := &LobVerifyAddressRequest{
+		PrimaryLine:   addressLine1,
+		SecondaryLine: addressLine2,
+		City:          city,
+		State:         state,
+		ZipCode:       zipCode,
+	}
+
+	log.Printf("PRIMARY %s SECONDARY %s CITY %s STATE %s ZIPCODE %s\n",
+		verifyAddressRequest.PrimaryLine,
+		verifyAddressRequest.SecondaryLine,
+		verifyAddressRequest.City,
+		verifyAddressRequest.State,
+		verifyAddressRequest.ZipCode)
+
+	marshalledVerifyAddressRequest, err := json.Marshal(verifyAddressRequest)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	verifyAddressUrl := fmt.Sprintf("%s/%s/%s", lobAddressBaseUrl, lobVersion, verificationsRoute)
+	req, err := http.NewRequest("POST", verifyAddressUrl, bytes.NewBuffer(marshalledVerifyAddressRequest))
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	setAuthHeaders(req, true)
+
+	resp, err := l.httpClient.Do(req)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	var verifyAddressResponse LobVerifyAddressResponse
+	if err := json.NewDecoder(resp.Body).Decode(&verifyAddressResponse); err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return &verifyAddressResponse, nil
+}
+
 func setAuthHeaders(req *http.Request, isLive bool) {
 	var authHeader string
 	if isLive {
 		authHeader = fmt.Sprintf("Basic %s",
 			base64.StdEncoding.EncodeToString(
-				[]byte(fmt.Sprintf("%s:", os.Getenv("LOB_API_TEST_KEY")))))
+				[]byte(fmt.Sprintf("%s:", os.Getenv("LOB_API_LIVE_KEY")))))
 	} else {
 		authHeader = fmt.Sprintf("Basic %s",
 			base64.StdEncoding.EncodeToString(
