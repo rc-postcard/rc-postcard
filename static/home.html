@@ -5,6 +5,9 @@
     <title>rc-postcard</title>
     <link type="text/css" rel="stylesheet" href="./static/styles.css">
     <script type="text/javascript" src="./static/script.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 </head>
 
 <body>
@@ -47,7 +50,8 @@
                 </div>
                 <div class="checkbox">
                     <input type="checkbox" id="editReceivePhysicalMail" name="receivePhysicalMail">
-                    <label for="receivePhysicalMail">I am able and would like to receive mail at this U.S.A. address.</label>
+                    <label for="receivePhysicalMail">I am able and would like to receive mail at this U.S.A.
+                        address.</label>
                 </div>
                 <input id="submitAddress" type="submit" value="Submit">
                 <label id="submitAddressStatusLabel"></label>
@@ -63,7 +67,7 @@
         </div>
         <div id="postcardImageCropper" style="display: none;" class="postcardImageCropper">
             <div class="cropperWrapper">
-                <img id="postcardImagePreview"/>
+                <img id="postcardImagePreview" />
                 <div id="cropper" class="cropper" draggable="true">
                     <div id="rightBottomCorner" class="rightBottomCorner" draggable="true"></div>
                 </div>
@@ -75,10 +79,7 @@
         <input type="file" id="postcardFileInput" />
         <canvas style="display: none;" id="canvas"></canvas>
         <h3>What do you want your postcard to say?</h3>
-        <textarea
-            placeholder="Write something"
-            id="backTextArea"
-            style="white-space: pre-wrap;"></textarea>
+        <textarea placeholder="Write something" id="backTextArea" style="white-space: pre-wrap;"></textarea>
         <br>
         <button id="submitPreviewPhoto">Preview</button>
         <div>
@@ -89,10 +90,10 @@
         <div>
             <h3>Select who you'd like to send your postcard to</h3>
             <h6>See someone in RC who's not on the list? Tell them to
-                sign up at 
+                sign up at
                 <a target="_blank" href="https://rc-postcard.fly.dev">rc-postcard.fly.dev</a>
             </h6>
-            <select id="recipientSelector" name="Recipient" id="receipients">
+            <select id="recipientSelector" name="Recipient" id="receipients" class="js-example-basic-single" style="width: 500px">
                 <option disabled selected value> -- Select a recipient -- </option>
             </select>
             <br>
@@ -103,7 +104,8 @@
             </div>
         </div>
         <button id="submitPostcard">Send Digital Postcard 🖥</button>
-        <button id="submitPhysicalPostcardButton" style="background-color: gray;" disabled>Send Physical Postcard ✉️ (__ credits remaining)</button>
+        <button id="submitPhysicalPostcardButton" style="background-color: gray;" disabled>Send Physical Postcard ✉️ (__
+            credits remaining)</button>
         <label id="submitPostcardStatusLabel"></label>
 
         <div>Made with <span style="font-size: 1.4rem;">💌</span> at the Recurse Center.</div>

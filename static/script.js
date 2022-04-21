@@ -82,6 +82,10 @@ window.onload = function () {
         }
     });
 
+    $(document).ready(function() {
+        $('.js-example-basic-single').select2();
+    });
+
     addressButton.addEventListener('click', function () {
         if (addressDiv.style.display === "none") {
             addressButton.innerText = "Hide my address 👻"
