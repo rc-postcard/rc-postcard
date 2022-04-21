@@ -35,7 +35,10 @@ Finally, back in your shell
 🎉 rc-postcard should now be running at [http://localhost:8080](http://localhost:8080)
 
 ## Other tools
-TODO: make tools to make postcard management easier
+Ssh into prod sql after logging into fly
+``` shell
+flyctl postgres connect -a rc-postcard-pg
+```
 
 ## Bonus
 - Validate address
