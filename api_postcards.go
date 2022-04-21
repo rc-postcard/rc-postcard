@@ -143,24 +143,35 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		AddressZip:   lob.RecurseAddressZip,
 	}
 
-	var toAddress lob.LobAddress
+	// by default we're sending to recurse center
+	toAddress := lob.LobAddress{
+		Name:         lob.RecurseCenterName,
+		AddressLine1: lob.RecurseAddressLine1,
+		AddressLine2: lob.RecurseAddressLine2,
+		AddressCity:  lob.RecurseAddressCity,
+		AddressState: lob.RecurseAddressState,
+		AddressZip:   lob.RecurseAddressZip,
+	}
+
 	var useProductionKey bool = false
 	if mode == PhysicalSend {
-		// get sendee info
-		receipientAddressId, recipientAcceptsPhysicalMail, _, _, err := postgresClient.getUserInfo(toRecurseId)
-		if err != nil {
-			log.Printf("Error getting recurse address: %v\n", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
+		if toRecurseId != 0 {
+			// get sendee info
+			receipientAddressId, recipientAcceptsPhysicalMail, _, _, err := postgresClient.getUserInfo(toRecurseId)
+			if err != nil {
+				log.Printf("Error getting recurse address: %v\n", err)
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
+				return
+			}
+
+			if !recipientAcceptsPhysicalMail {
+				log.Printf("Recipient does not accept physical mail %v\n", err)
+				http.Error(w, "Recipient does not accept physical mail", http.StatusBadRequest)
+				return
+			}
+			toAddress = lob.LobAddress{AddressId: receipientAddressId}
 		}
 
-		if !recipientAcceptsPhysicalMail {
-			log.Printf("Recipient does not accept physical mail %v\n", err)
-			http.Error(w, "Recipient does not accept physical mail", http.StatusBadRequest)
-			return
-		}
-
-		toAddress = lob.LobAddress{AddressId: receipientAddressId}
 		useProductionKey = false // TODO update to true when going live
 	} else if mode == DigitalSend {
 		// get sendee info
@@ -171,23 +182,8 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		toAddress = lob.LobAddress{
-			Name:         userName,
-			AddressLine1: lob.RecurseAddressLine1,
-			AddressLine2: lob.RecurseAddressLine2,
-			AddressCity:  lob.RecurseAddressCity,
-			AddressState: lob.RecurseAddressState,
-			AddressZip:   lob.RecurseAddressZip,
-		}
-	} else {
-		toAddress = lob.LobAddress{
-			Name:         "Recurse Center",
-			AddressLine1: lob.RecurseAddressLine1,
-			AddressLine2: lob.RecurseAddressLine2,
-			AddressCity:  lob.RecurseAddressCity,
-			AddressState: lob.RecurseAddressState,
-			AddressZip:   lob.RecurseAddressZip,
-		}
+		// override recurse center name with userName
+		toAddress.Name = userName
 	}
 
 	lobCreatePostcardResponse, lobError := lobClient.CreatePostCard(toAddress, fromAddress, fileBytes, backTpl.String(), useProductionKey, user.Id, toRecurseId, mode)

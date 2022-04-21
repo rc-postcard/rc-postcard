@@ -16,7 +16,7 @@ def main():
             user["id"], user["name"], user["email"]))
 
     print("INSERT INTO user_info (recurse_id, user_name, user_email) VALUES ({0}, \'{1}\', \'{2}\') ON CONFLICT (recurse_id) DO NOTHING;".format(
-        0, "Recurse Id", "admissions@recurse.com"))
+        0, "Recurse Center", "admissions@recurse.com"))
 
 
 if __name__ == '__main__':
