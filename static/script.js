@@ -118,7 +118,7 @@ window.onload = function () {
             postcardsButton.innerText = "Hide my postcards 💌"
             postcardsDiv.style.display = "block";
         } else {
-            postcardsButton.innerText = "Show my postcards :)"
+            postcardsButton.innerText = "Show my digital postcards :)"
             postcardsDiv.style.display = "none";
         }
     })
