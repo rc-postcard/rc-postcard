@@ -16,6 +16,7 @@ type Contact struct {
 	RecurseId           int    `json:"recurseId"`
 	Name                string `json:"name"`
 	Email               string `json:"email"`
+	Batch               string `json:"batch"`
 	AcceptsPhysicalMail bool   `json:"acceptsPhysicalMail"`
 }
 

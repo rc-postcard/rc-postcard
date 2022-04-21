@@ -44,13 +44,27 @@ window.onload = function () {
         submitPhysicalPostcardButton.innerText = "Send Physical Postcard ✉️ (" + credits + " credits remaining)"
 
         let contacts = data["contacts"]
+        let rc_opt;
         contacts.forEach(contact => {
             var opt = document.createElement('option')
-            opt.value = contact["recurseId"]
-            opt.innerHTML = contact["name"] + " (" + contact["email"] + ")"
+            rc_id = contact["recurseId"]
+            opt.value = rc_id
+            if(contact["batch"]) {
+                opt.innerText = contact["name"] + " (" + contact["batch"] + ")";
+            } else {
+                opt.innerText = contact["name"];
+            }
+            if(rc_id === 0) { // for Recurse center
+                rc_opt = opt;
+            }
             recipientSelector.appendChild(opt)
-            contactMapping[contact["recurseId"]] = { "name": contact["name"], "acceptsPhysicalMail": contact["acceptsPhysicalMail"] };
+            contactMapping[contact["recurseId"]] = { 
+                "name": contact["name"],
+                "acceptsPhysicalMail": contact["acceptsPhysicalMail"]
+            };
         });
+        rc_opt.selected = true;
+        onSelectRecipient();
         return fetch("/postcards");
     }).then(response => response.json()
     ).then(data => {
@@ -244,9 +258,10 @@ window.onload = function () {
         })
     });
 
-    $('.js-example-basic-single').on('select2:select', function (e) {
-        console.log("CHANGE")
+    function onSelectRecipient() {
         let recipientId = recipientSelector.value
+        let receipientName = recipientSelector.options[recipientSelector.selectedIndex].innerText
+        document.getElementById("sendPostcardHeading").innerText = "Send a postcard to " + receipientName + "!";
         if (contactMapping[recipientId]["acceptsPhysicalMail"] && credits > 0) {
             cannotSendPhysicalPostcardDiv.style.display = "none";
             submitPhysicalPostcardButton.disabled = false
@@ -262,6 +277,10 @@ window.onload = function () {
             submitPhysicalPostcardButton.disabled = true
             submitPhysicalPostcardButton.style.backgroundColor = "gray"
         }
+    }
+
+    $('.js-example-basic-single').on('select2:select', function (e) {
+        onSelectRecipient();
     });
 
     submitPostcardButton.addEventListener('click', function () {
