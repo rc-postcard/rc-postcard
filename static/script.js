@@ -47,10 +47,17 @@ window.onload = function () {
         contacts.forEach(contact => {
             var opt = document.createElement('option')
             opt.value = contact["recurseId"]
-            opt.innerHTML = contact["name"] + " (" + contact["email"] + ")"
+            opt.innerHTML = contact["name"]
+            if(opt.value === 0) { // for Recurse center
+                opt.selected = true;
+            }
             recipientSelector.appendChild(opt)
-            contactMapping[contact["recurseId"]] = { "name": contact["name"], "acceptsPhysicalMail": contact["acceptsPhysicalMail"] };
+            contactMapping[contact["recurseId"]] = { 
+                "name": contact["name"],
+                "acceptsPhysicalMail": contact["acceptsPhysicalMail"]
+            };
         });
+        onSelectRecipient();
         return fetch("/postcards");
     }).then(response => response.json()
     ).then(data => {
@@ -244,9 +251,10 @@ window.onload = function () {
         })
     });
 
-    $('.js-example-basic-single').on('select2:select', function (e) {
-        console.log("CHANGE")
+    function onSelectRecipient() {
         let recipientId = recipientSelector.value
+        let receipientName = recipientSelector.options[recipientSelector.selectedIndex].innerText
+        document.getElementById("sendPostcardHeading").innerText = "Send a postcard to " + receipientName + "!";
         if (contactMapping[recipientId]["acceptsPhysicalMail"] && credits > 0) {
             cannotSendPhysicalPostcardDiv.style.display = "none";
             submitPhysicalPostcardButton.disabled = false
@@ -262,6 +270,10 @@ window.onload = function () {
             submitPhysicalPostcardButton.disabled = true
             submitPhysicalPostcardButton.style.backgroundColor = "gray"
         }
+    }
+
+    $('.js-example-basic-single').on('select2:select', function (e) {
+        onSelectRecipient();
     });
 
     submitPostcardButton.addEventListener('click', function () {

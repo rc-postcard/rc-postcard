@@ -12,6 +12,50 @@
 
 <body>
     <div class="wrapper">
+        <div id="postcardImageCropper" style="display: none;" class="postcardImageCropper">
+            <div class="cropperWrapper">
+                <img id="postcardImagePreview" />
+                <div id="cropper" class="cropper" draggable="true">
+                    <div id="rightBottomCorner" class="rightBottomCorner" draggable="true"></div>
+                </div>
+            </div>
+            <div><button id="crop">Crop</button></div>
+        </div>
+        <h2 id="sendPostcardHeading">Send a postcard to Recurse Center!</h2>
+        <div>
+            <h3>Select who you'd like to send your postcard to</h3>
+            <h6>See someone in RC who's not on the list? Tell them to
+                sign up at
+                <a target="_blank" href="https://rc-postcard.fly.dev">rc-postcard.fly.dev</a>
+            </h6>
+            <select id="recipientSelector" name="Recipient" class="js-example-basic-single" style="width: 500px">
+                <!-- <option disabled selected value> -- Select a recipient -- </option> -->
+            </select>
+            <br>
+            <div>
+                <div id="cannotSendPhysicalPostcardDiv" style="display: none;">
+                    <h4 id="physicalPostcardErrorLabel"></h4>
+                </div>
+            </div>
+        </div>
+        <h3>Select a picture</h3>
+        <input type="file" id="postcardFileInput" />
+        <canvas style="display: none;" id="canvas"></canvas>
+        <h3>What do you want your postcard to say?</h3>
+        <textarea placeholder="Write something" id="backTextArea" style="white-space: pre-wrap;"></textarea>
+        <br>
+        <button id="submitPreviewPhoto">Preview</button>
+        <div>
+            <label id="pdfPreviewLabel">PDF Preview (try refreshing a few times)</label>
+            <label id="submitPreviewStatusLabel"></label>
+            <a target="_blank" id="pdfPreviewLink" href=""></a>
+        </div>
+        <button id="submitPostcard">Send Digital Postcard 🖥</button>
+        <button id="submitPhysicalPostcardButton" style="background-color: gray;" disabled>Send Physical Postcard ✉️ (__
+            credits remaining)</button>
+        <label id="submitPostcardStatusLabel"></label>
+
+
         <button id="addressButton">Show my address :)</button>
         <div style="display: none;" id="addressDiv">
             <div id="showAddressDiv">
@@ -60,53 +104,11 @@
             <!-- <button id="deleteAddressButton">Delete my account</button> -->
         </div>
         <br>
-        <button id="postcardsButton">Hide my postcards 💌</button>
-        <div id="postcardsDiv">
+        <button id="postcardsButton">Show my postcards :)</button>
+        <div id="postcardsDiv" style="display: none;">
             <ul id="postcardslist" class="postcardslist">
             </ul>
         </div>
-        <div id="postcardImageCropper" style="display: none;" class="postcardImageCropper">
-            <div class="cropperWrapper">
-                <img id="postcardImagePreview" />
-                <div id="cropper" class="cropper" draggable="true">
-                    <div id="rightBottomCorner" class="rightBottomCorner" draggable="true"></div>
-                </div>
-            </div>
-            <div><button id="crop">Crop</button></div>
-        </div>
-        <h2>Send a postcard!</h2>
-        <h3>Select a picture</h3>
-        <input type="file" id="postcardFileInput" />
-        <canvas style="display: none;" id="canvas"></canvas>
-        <h3>What do you want your postcard to say?</h3>
-        <textarea placeholder="Write something" id="backTextArea" style="white-space: pre-wrap;"></textarea>
-        <br>
-        <button id="submitPreviewPhoto">Preview</button>
-        <div>
-            <label id="pdfPreviewLabel">PDF Preview (try refreshing a few times)</label>
-            <label id="submitPreviewStatusLabel"></label>
-            <a target="_blank" id="pdfPreviewLink" href=""></a>
-        </div>
-        <div>
-            <h3>Select who you'd like to send your postcard to</h3>
-            <h6>See someone in RC who's not on the list? Tell them to
-                sign up at
-                <a target="_blank" href="https://rc-postcard.fly.dev">rc-postcard.fly.dev</a>
-            </h6>
-            <select id="recipientSelector" name="Recipient" class="js-example-basic-single" style="width: 500px">
-                <option disabled selected value> -- Select a recipient -- </option>
-            </select>
-            <br>
-            <div>
-                <div id="cannotSendPhysicalPostcardDiv" style="display: none;">
-                    <h4 id="physicalPostcardErrorLabel"></h4>
-                </div>
-            </div>
-        </div>
-        <button id="submitPostcard">Send Digital Postcard 🖥</button>
-        <button id="submitPhysicalPostcardButton" style="background-color: gray;" disabled>Send Physical Postcard ✉️ (__
-            credits remaining)</button>
-        <label id="submitPostcardStatusLabel"></label>
 
         <div>Made with <span style="font-size: 1.4rem;">💌</span> at the Recurse Center.</div>
     </div>
