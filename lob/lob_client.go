@@ -58,12 +58,14 @@ type LobGetPostcardsResponse struct {
 		Metadata struct {
 			ToRcId   string `json:"to_rc_id"`
 			FromRcId string `json:"from_rc_id"`
+			Mode     string `json:"mode"`
 		} `json:"metadata"`
-		DateCreated time.Time `json:"date_created"`
+		DateCreated          time.Time `json:"date_created"`
+		ExpectedDeliveryDate string    `json:"expected_delivery_date"`
 	} `json:"data"`
 }
 
-func (l *Lob) GetPostcards(recipientRecurseId int) (*LobGetPostcardsResponse, error) {
+func (l *Lob) GetPostcards(recipientRecurseId int, isLive bool) (*LobGetPostcardsResponse, error) {
 	getPostcardsUrl := fmt.Sprintf("%s/%s/%s?metadata[to_rc_id]=%d", lobAddressBaseUrl, lobVersion, postcardsRoute, recipientRecurseId)
 	req, err := http.NewRequest("GET", getPostcardsUrl, nil)
 	if err != nil {
@@ -71,7 +73,7 @@ func (l *Lob) GetPostcards(recipientRecurseId int) (*LobGetPostcardsResponse, er
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(os.Getenv("LOB_API_TEST_KEY")+":")))
+	setAuthHeaders(req, isLive)
 
 	resp, err := l.httpClient.Do(req)
 	if err != nil {
@@ -240,7 +242,7 @@ type LobAddress struct {
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 // https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress, frontImage []byte, back string, isLive bool, fromRcId, toRcId int) (*LobCreatePostcardResponse, *LobError) {
+func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress, frontImage []byte, back string, isLive bool, fromRcId, toRcId int, mode string) (*LobCreatePostcardResponse, *LobError) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -276,6 +278,7 @@ func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress,
 
 	_ = writer.WriteField("metadata[to_rc_id]", strconv.Itoa(toRcId))
 	_ = writer.WriteField("metadata[from_rc_id]", strconv.Itoa(fromRcId))
+	_ = writer.WriteField("metadata[mode]", mode)
 
 	writer.Close()
 

@@ -35,14 +35,26 @@ func getPostcards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	query := r.URL.Query()
+	mode := query.Get("mode")
+
+	isLive := mode == PhysicalSend
+
 	var user *User = r.Context().Value(userContextKey).(*User)
 
-	postcards, err := lobClient.GetPostcards(user.Id)
+	postcards, err := lobClient.GetPostcards(user.Id, isLive)
 
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
+	}
+
+	if mode == PhysicalSend {
+		// scrub details from physical postcards
+		for idx := range postcards.Data {
+			postcards.Data[idx].Url = ""
+		}
 	}
 
 	resp, err := JSONMarshal(postcards)
@@ -178,7 +190,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	lobCreatePostcardResponse, lobError := lobClient.CreatePostCard(toAddress, fromAddress, fileBytes, backTpl.String(), useProductionKey, user.Id, toRecurseId)
+	lobCreatePostcardResponse, lobError := lobClient.CreatePostCard(toAddress, fromAddress, fileBytes, backTpl.String(), useProductionKey, user.Id, toRecurseId, mode)
 	if lobError != nil && (lobError.Err != nil || lobError.StatusCode/100 >= 5) {
 		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
