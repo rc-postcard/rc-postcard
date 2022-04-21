@@ -15,10 +15,23 @@ import (
 )
 
 type User struct {
-	Id    int    `json:"id"`
-	Slug  string `json:"slug"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	Id     int    `json:"id"`
+	Slug   string `json:"slug"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Stints []struct {
+		Batch struct {
+			ShortName string `json:"short_name"`
+		} `json:"batch"`
+	} `json:"stints"`
+}
+
+func (u *User) GetShortName() string {
+	if len(u.Stints) > 0 {
+		return u.Stints[0].Batch.ShortName
+	} else {
+		return ""
+	}
 }
 
 //go:embed static

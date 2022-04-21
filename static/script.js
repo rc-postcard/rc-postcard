@@ -47,9 +47,10 @@ window.onload = function () {
         let rc_opt;
         contacts.forEach(contact => {
             var opt = document.createElement('option')
-            opt.value = contact["recurseId"]
+            rc_id = contact["recurseId"]
+            opt.value = rc_id
             opt.innerHTML = contact["name"]
-            if(opt.value == 0) { // for Recurse center
+            if(rc_id === 0) { // for Recurse center
                 rc_opt = opt;
             }
             recipientSelector.appendChild(opt)
