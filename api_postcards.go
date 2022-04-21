@@ -52,8 +52,8 @@ func getPostcards(w http.ResponseWriter, r *http.Request) {
 
 	if mode == PhysicalSend {
 		// scrub details from physical postcards
-		for _, postcard := range postcards.Data {
-			postcard.Url = ""
+		for idx := range postcards.Data {
+			postcards.Data[idx].Url = ""
 		}
 	}
 
