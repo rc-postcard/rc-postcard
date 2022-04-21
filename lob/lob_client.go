@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -273,23 +274,8 @@ func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress,
 		_ = writer.WriteField("to[address_zip]", toLobAddress.AddressZip)
 	}
 
-	postcardMetadata, err := json.Marshal(LobCreatePostcardMetadata{FromRcId: strconv.Itoa(fromRcId), ToRcId: strconv.Itoa(toRcId)})
-	if err != nil {
-		log.Println(err)
-		return nil, &LobError{Err: err}
-	}
-
-	metadataPart, err := writer.CreateFormField("metadata")
-	if err != nil {
-		log.Println(err)
-		return nil, &LobError{Err: err}
-	}
-
-	_, err = metadataPart.Write(postcardMetadata)
-	if err != nil {
-		log.Println(err)
-		return nil, &LobError{Err: err}
-	}
+	_ = writer.WriteField("metadata[to_rc_id]", strconv.Itoa(toRcId))
+	_ = writer.WriteField("metadata[from_rc_id]", strconv.Itoa(fromRcId))
 
 	writer.Close()
 
@@ -392,6 +378,66 @@ func (l *Lob) VerifyAddress(addressLine1, addressLine2, city, state, zipCode str
 	}
 
 	return &verifyAddressResponse, nil
+}
+
+func (l *Lob) VerifyAddressBySendingTestPostcard(addressLine1, addressLine2, city, state, zipCode string) (*LobVerifyAddressResponse, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	_ = writer.WriteField("front", fmt.Sprintf("<body>Hello!</body>"))
+	_ = writer.WriteField("back", fmt.Sprintf("<body>Goodbye!</body>"))
+
+	_ = writer.WriteField("from[name]", "Recurse Center")
+	_ = writer.WriteField("from[address_line1]", RecurseAddressLine1)
+	_ = writer.WriteField("from[address_line2]", RecurseAddressLine1)
+	_ = writer.WriteField("from[address_city]", RecurseAddressCity)
+	_ = writer.WriteField("from[address_state]", RecurseAddressState)
+	_ = writer.WriteField("from[address_zip]", RecurseAddressZip)
+
+	_ = writer.WriteField("to[name]", "Your name")
+	_ = writer.WriteField("to[address_line1]", addressLine1)
+	_ = writer.WriteField("to[address_line2]", addressLine2)
+	_ = writer.WriteField("to[address_city]", city)
+	_ = writer.WriteField("to[address_state]", state)
+	_ = writer.WriteField("to[address_zip]", zipCode)
+
+	_ = writer.WriteField("metadata[mode]", "ver")
+
+	writer.Close()
+
+	postPostcardUrl := fmt.Sprintf("%s/%s/%s", lobAddressBaseUrl, lobVersion, postcardsRoute)
+	req, err := http.NewRequest("POST", postPostcardUrl, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	setAuthHeaders(req, false)
+
+	resp, err := l.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 200 {
+		// update to read from actual response
+		var createPostcardResponse LobCreatePostcardResponse
+		if err := json.NewDecoder(resp.Body).Decode(&createPostcardResponse); err != nil {
+			return nil, err
+		}
+		return &LobVerifyAddressResponse{Deliverability: Deliverable}, nil
+	} else if resp.StatusCode == 422 {
+		return &LobVerifyAddressResponse{Deliverability: Undeliverable}, nil
+	} else {
+		var lobErrorResponse LobErrorResponse
+		if err := json.NewDecoder(resp.Body).Decode(&lobErrorResponse); err != nil {
+			return nil, err
+		}
+
+		log.Printf("STATUS CODE %d, Response %v\n", resp.StatusCode, lobErrorResponse)
+		return nil, errors.New("err_verifying_address")
+	}
 }
 
 func setAuthHeaders(req *http.Request, isLive bool) {
