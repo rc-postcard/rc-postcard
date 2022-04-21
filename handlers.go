@@ -100,7 +100,8 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 		if err = postgresClient.insertUser(
 			session.User.Id,
 			session.User.Name,
-			session.User.Email); err != nil {
+			session.User.Email,
+			session.User.GetShortName()); err != nil {
 			log.Println(err)
 			http.Error(w, "Error setting address in database", http.StatusInternalServerError)
 			return
