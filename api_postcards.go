@@ -172,7 +172,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 			toAddress = lob.LobAddress{AddressId: receipientAddressId}
 		}
 
-		useProductionKey = false // TODO update to true when going live
+		useProductionKey = true
 	} else if mode == DigitalSend {
 		// get sendee info
 		_, _, _, userName, err := postgresClient.getUserInfo(toRecurseId)
