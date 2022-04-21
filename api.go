@@ -92,7 +92,7 @@ func createOrUpdateAddress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if acceptsPhysicalMail {
-		verifyAddressResponse, err := lobClient.VerifyAddress(address1, address2, city, state, zip)
+		verifyAddressResponse, err := lobClient.VerifyAddressBySendingTestPostcard(address1, address2, city, state, zip)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "Error verifying address", http.StatusBadRequest)
