@@ -135,7 +135,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 	var useProductionKey bool = false
 	if mode == PhysicalSend {
 		// get sendee info
-		receipientAddressId, recipientAcceptsPhysicalMail, _, _, err := postgresClient.getUserInfo(recurseCenterRecurseId)
+		receipientAddressId, recipientAcceptsPhysicalMail, _, _, err := postgresClient.getUserInfo(toRecurseId)
 		if err != nil {
 			log.Printf("Error getting recurse address: %v\n", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
