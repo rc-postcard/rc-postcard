@@ -132,7 +132,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var toAddress lob.LobAddress
-	var useProductionKey bool
+	var useProductionKey bool = false
 	if mode == PhysicalSend {
 		// get sendee info
 		receipientAddressId, recipientAcceptsPhysicalMail, _, _, err := postgresClient.getUserInfo(recurseCenterRecurseId)
@@ -149,7 +149,7 @@ func sendPostcards(w http.ResponseWriter, r *http.Request) {
 		}
 
 		toAddress = lob.LobAddress{AddressId: receipientAddressId}
-		useProductionKey = true
+		useProductionKey = false // TODO update to true when going live
 	} else if mode == DigitalSend {
 		// get sendee info
 		_, _, _, userName, err := postgresClient.getUserInfo(toRecurseId)
