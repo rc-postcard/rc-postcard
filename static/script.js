@@ -44,12 +44,13 @@ window.onload = function () {
         submitPhysicalPostcardButton.innerText = "Send Physical Postcard ✉️ (" + credits + " credits remaining)"
 
         let contacts = data["contacts"]
+        let rc_opt;
         contacts.forEach(contact => {
             var opt = document.createElement('option')
             opt.value = contact["recurseId"]
             opt.innerHTML = contact["name"]
-            if(opt.value === 0) { // for Recurse center
-                opt.selected = true;
+            if(opt.value == 0) { // for Recurse center
+                rc_opt = opt;
             }
             recipientSelector.appendChild(opt)
             contactMapping[contact["recurseId"]] = { 
@@ -57,6 +58,7 @@ window.onload = function () {
                 "acceptsPhysicalMail": contact["acceptsPhysicalMail"]
             };
         });
+        rc_opt.selected = true;
         onSelectRecipient();
         return fetch("/postcards");
     }).then(response => response.json()
