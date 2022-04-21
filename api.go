@@ -91,6 +91,21 @@ func createOrUpdateAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if acceptsPhysicalMail {
+		verifyAddressResponse, err := lobClient.VerifyAddressBySendingTestPostcard(address1, address2, city, state, zip)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Error verifying address", http.StatusBadRequest)
+			return
+		}
+
+		if verifyAddressResponse.Deliverability == lob.Undeliverable {
+			log.Println("Address undeliverable")
+			http.Error(w, "Address undeliverable", http.StatusBadRequest)
+			return
+		}
+	}
+
 	// TODO update for real address
 	createAddressResponse, err := lobClient.CreateAddress(name, address1, address2, city, state, zip, user.Id, false)
 	if err != nil {

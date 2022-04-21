@@ -14,6 +14,7 @@ window.onload = function () {
     const recipientSelector = document.getElementById('recipientSelector')
     const submitPreviewStatusLabel = document.getElementById('submitPreviewStatusLabel')
     const submitPostcardStatusLabel = document.getElementById('submitPostcardStatusLabel')
+    const submitAddressStatusLabel = document.getElementById('submitAddressStatusLabel')
     const backTextArea = document.getElementById("backTextArea")
     const postcardslist = document.getElementById("postcardslist")
     const cannotSendPhysicalPostcardDiv = document.getElementById("cannotSendPhysicalPostcardDiv")
@@ -355,11 +356,16 @@ window.onload = function () {
         }
         body = new URLSearchParams(address)
 
-        fetch("/addresses", { method: "POST", body: body }).then(response =>
-            response.json()
-        ).then(data => {
-            window.location.replace(window.location.href);
-        });
+        fetch("/addresses", { method: "POST", body: body }).then(response => {
+            if (response.status == 200) {
+                return response.json().then(data => {
+                    window.location.replace(window.location.href);
+                });
+            } else {
+                submitAddressStatusLabel.style = "background-color: red"
+                submitAddressStatusLabel.innerText = "Invalid address, please try again!"
+            }
+        })
     });
 
     // deleteAddressButton.addEventListener('click', function () {
