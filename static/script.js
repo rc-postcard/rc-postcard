@@ -49,7 +49,7 @@ window.onload = function () {
             opt.value = contact["recurseId"]
             opt.innerHTML = contact["name"] + " (" + contact["email"] + ")"
             recipientSelector.appendChild(opt)
-            contactMapping[contact["recurseId"]] = {"name": contact["name"], "acceptsPhysicalMail": contact["acceptsPhysicalMail"] };
+            contactMapping[contact["recurseId"]] = { "name": contact["name"], "acceptsPhysicalMail": contact["acceptsPhysicalMail"] };
         });
         return fetch("/postcards");
     }).then(response => response.json()
@@ -57,7 +57,7 @@ window.onload = function () {
         postcards = data["data"]
         for (let postcard of postcards) {
             var postcardListItem = document.createElement('li')
-            
+
             var postcardURL = document.createElement('a')
             postcardURL.href = postcard["url"]
             postcardURL.target = "_blank"
@@ -70,10 +70,10 @@ window.onload = function () {
 
             var from_id = postcard["metadata"]["from_rc_id"]
             var from_name = contactMapping[from_id]["name"]
-            
+
             var senderDiv = document.createElement('div');
             senderDiv.innerText = from_name;
-            
+
             postcardDiv.appendChild(timeDiv)
             postcardDiv.appendChild(senderDiv)
             postcardURL.appendChild(postcardDiv)
@@ -82,7 +82,7 @@ window.onload = function () {
         }
     });
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.js-example-basic-single').select2();
     });
 
@@ -107,7 +107,7 @@ window.onload = function () {
     })
 
     postcardImageInput.addEventListener('change', function (event) {
-        if(event.target.files.length > 0){
+        if (event.target.files.length > 0) {
             document.getElementById("postcardImageCropper").style.display = "block";
             const file = event.target.files[0];
             const src = URL.createObjectURL(file);
@@ -117,10 +117,10 @@ window.onload = function () {
             preview.style.display = "block";
 
             //cropper
-            preview.onload = function() {
+            preview.onload = function () {
                 const cropper = document.getElementById("cropper");
                 const previewRect = preview.getBoundingClientRect();
-                if(previewRect.height >= previewRect.width * 4.25 / 6.25) {
+                if (previewRect.height >= previewRect.width * 4.25 / 6.25) {
                     cropper.style.width = "calc(100% - 20px)";
                     cropper.style.height = `${(previewRect.width - 20) * 4.25 / 6.25}px`;
                 } else {
@@ -136,17 +136,17 @@ window.onload = function () {
     let prevTranslateX = 0, prevTranslateY = 0;
     let isRightBottomCornerBeingDragged = false;
 
-    document.addEventListener("dragstart", function(event) {
-        if(event.target.id === "cropper") {
+    document.addEventListener("dragstart", function (event) {
+        if (event.target.id === "cropper") {
             startX = event.clientX;
             startY = event.clientY;
-        } else if(event.target.id === "rightBottomCorner") {
+        } else if (event.target.id === "rightBottomCorner") {
             isRightBottomCornerBeingDragged = true;
         }
     }, false);
 
     /* events fired on the drop targets */
-    document.addEventListener("dragover", function(event) {
+    document.addEventListener("dragover", function (event) {
         // prevent default to allow drop
         event.preventDefault();
     }, false);
@@ -155,14 +155,14 @@ window.onload = function () {
         return Math.min(Math.max(value, min), max);
     }
 
-    document.addEventListener("drop", function(event) {
+    document.addEventListener("drop", function (event) {
         // prevent default action (open as link for some elements)
         event.preventDefault();
         const cropper = document.getElementById("cropper");
         const cropperRect = cropper.getBoundingClientRect();
         const preview = document.getElementById("postcardImagePreview");
         const previewRect = preview.getBoundingClientRect();
-        if(!isRightBottomCornerBeingDragged) {
+        if (!isRightBottomCornerBeingDragged) {
             let newX = bound(event.clientX - startX + prevTranslateX, 0, previewRect.width - cropperRect.width);
             let newY = bound(event.clientY - startY + prevTranslateY, 0, previewRect.height - cropperRect.height);
             cropper.style.transform = `translate(${newX}px, ${newY}px)`;
@@ -171,7 +171,7 @@ window.onload = function () {
         } else {
             let img = new Image();
             img.onload = () => {
-                let minWidth =  1875 * previewRect.width / img.naturalWidth;
+                let minWidth = 1875 * previewRect.width / img.naturalWidth;
                 let newWidth = Math.max(event.clientX - cropperRect.left, minWidth + 1)
                 cropper.style.width = `${newWidth}px`;
                 cropper.style.height = `${newWidth * 4.25 / 6.25}px`;
@@ -244,7 +244,8 @@ window.onload = function () {
         })
     });
 
-    recipientSelector.addEventListener("change", function() {
+    $('.js-example-basic-single').on('select2:select', function (e) {
+        console.log("CHANGE")
         let recipientId = recipientSelector.value
         if (contactMapping[recipientId]["acceptsPhysicalMail"] && credits > 0) {
             cannotSendPhysicalPostcardDiv.style.display = "none";
@@ -261,8 +262,7 @@ window.onload = function () {
             submitPhysicalPostcardButton.disabled = true
             submitPhysicalPostcardButton.style.backgroundColor = "gray"
         }
-
-    })
+    });
 
     submitPostcardButton.addEventListener('click', function () {
         let recipientId = recipientSelector.value
@@ -321,11 +321,11 @@ window.onload = function () {
                 submitPostcardStatusLabel.innerText = data["message"]
                 submitPostcardStatusLabel.style = "background-color: red"
             }
-        }).catch(function(error) {
+        }).catch(function (error) {
             submitPostcardStatusLabel.innerText = "Error sending postcard."
             submitPostcardStatusLabel.style = "background-color: red"
         })
-        
+
     })
 
     editAddressButton.addEventListener('click', function () {

@@ -58,12 +58,14 @@ type LobGetPostcardsResponse struct {
 		Metadata struct {
 			ToRcId   string `json:"to_rc_id"`
 			FromRcId string `json:"from_rc_id"`
+			Mode     string `json:"mode"`
 		} `json:"metadata"`
-		DateCreated time.Time `json:"date_created"`
+		DateCreated          time.Time `json:"date_created"`
+		ExpectedDeliveryDate string    `json:"expected_delivery_date"`
 	} `json:"data"`
 }
 
-func (l *Lob) GetPostcards(recipientRecurseId int) (*LobGetPostcardsResponse, error) {
+func (l *Lob) GetPostcards(recipientRecurseId int, isLive bool) (*LobGetPostcardsResponse, error) {
 	getPostcardsUrl := fmt.Sprintf("%s/%s/%s?metadata[to_rc_id]=%d", lobAddressBaseUrl, lobVersion, postcardsRoute, recipientRecurseId)
 	req, err := http.NewRequest("GET", getPostcardsUrl, nil)
 	if err != nil {
@@ -71,7 +73,7 @@ func (l *Lob) GetPostcards(recipientRecurseId int) (*LobGetPostcardsResponse, er
 		return nil, err
 	}
 
-	setAuthHeaders(req, false)
+	setAuthHeaders(req, isLive)
 
 	resp, err := l.httpClient.Do(req)
 	if err != nil {

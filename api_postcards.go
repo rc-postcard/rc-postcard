@@ -35,14 +35,26 @@ func getPostcards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	query := r.URL.Query()
+	mode := query.Get("mode")
+
+	isLive := mode == PhysicalSend
+
 	var user *User = r.Context().Value(userContextKey).(*User)
 
-	postcards, err := lobClient.GetPostcards(user.Id)
+	postcards, err := lobClient.GetPostcards(user.Id, isLive)
 
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
+	}
+
+	if mode == PhysicalSend {
+		// scrub details from physical postcards
+		for _, postcard := range postcards.Data {
+			postcard.Url = ""
+		}
 	}
 
 	resp, err := JSONMarshal(postcards)
