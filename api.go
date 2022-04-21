@@ -168,7 +168,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 
 	var user *User = r.Context().Value(userContextKey).(*User)
 
-	lobAddressId, acceptsPhysicalMail, _, err := postgresClient.getUserInfo(user.Id)
+	lobAddressId, acceptsPhysicalMail, _, _, err := postgresClient.getUserInfo(user.Id)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "No address found that corresponds to this user.", http.StatusNotFound)

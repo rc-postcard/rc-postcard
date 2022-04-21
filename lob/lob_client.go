@@ -231,12 +231,14 @@ type LobCreatePostcardResponse struct {
 }
 
 type LobAddress struct {
-	Name         string `json:"name"`
-	AddressLine1 string `json:"address_line1"`
-	AddressLine2 string `json:"address_line2"`
-	AddressCity  string `json:"address_city"`
-	AddressState string `json:"address_state"`
-	AddressZip   string `json:"address_zip"`
+	AddressId      string `json:"id"`
+	Name           string `json:"name"`
+	AddressLine1   string `json:"address_line1"`
+	AddressLine2   string `json:"address_line2"`
+	AddressCity    string `json:"address_city"`
+	AddressState   string `json:"address_state"`
+	AddressZip     string `json:"address_zip"`
+	AddressCountry string `json:"address_country"`
 }
 
 // https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
@@ -252,40 +254,27 @@ func (l *Lob) CreatePostCard(fromLobAddress LobAddress, toLobAddress LobAddress,
 
 	_ = writer.WriteField("back", back)
 
-	toLobAddressBytes, err := json.Marshal(toLobAddress)
-	if err != nil {
-		log.Println(err)
-		return nil, &LobError{Err: err}
+	if fromLobAddress.AddressId != "" {
+		_ = writer.WriteField("from", fromLobAddress.AddressId)
+
+	} else {
+		_ = writer.WriteField("from[name]", fromLobAddress.Name)
+		_ = writer.WriteField("from[address_line1]", fromLobAddress.AddressLine1)
+		_ = writer.WriteField("from[address_line2]", fromLobAddress.AddressLine2)
+		_ = writer.WriteField("from[address_city]", fromLobAddress.AddressCity)
+		_ = writer.WriteField("from[address_state]", fromLobAddress.AddressState)
+		_ = writer.WriteField("from[address_zip]", fromLobAddress.AddressZip)
 	}
 
-	toPart, err := writer.CreateFormField("to")
-	if err != nil {
-		log.Println(err)
-		return nil, &LobError{Err: err}
-	}
-
-	_, err = toPart.Write(toLobAddressBytes)
-	if err != nil {
-		log.Println(err)
-		return nil, &LobError{Err: err}
-	}
-
-	fromLobAddressBytes, err := json.Marshal(fromLobAddress)
-	if err != nil {
-		log.Println(err)
-		return nil, &LobError{Err: err}
-	}
-
-	fromPart, err := writer.CreateFormField("from")
-	if err != nil {
-		log.Println(err)
-		return nil, &LobError{Err: err}
-	}
-
-	_, err = fromPart.Write(fromLobAddressBytes)
-	if err != nil {
-		log.Println(err)
-		return nil, &LobError{Err: err}
+	if toLobAddress.AddressId != "" {
+		_ = writer.WriteField("to", toLobAddress.AddressId)
+	} else {
+		_ = writer.WriteField("to[name]", toLobAddress.Name)
+		_ = writer.WriteField("to[address_line1]", toLobAddress.AddressLine1)
+		_ = writer.WriteField("to[address_line2]", toLobAddress.AddressLine2)
+		_ = writer.WriteField("to[address_city]", toLobAddress.AddressCity)
+		_ = writer.WriteField("to[address_state]", toLobAddress.AddressState)
+		_ = writer.WriteField("to[address_zip]", toLobAddress.AddressZip)
 	}
 
 	postcardMetadata, err := json.Marshal(LobCreatePostcardMetadata{FromRcId: strconv.Itoa(fromRcId), ToRcId: strconv.Itoa(toRcId)})
