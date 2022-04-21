@@ -12,6 +12,23 @@ Create an account on [lob.com](https://lob.com) and set your API keys in your en
 # Note: we recommend copying the blank .env.example into a .env file and setting your environmental variables there.
 🎨 source .env
 
+🎨 make pg
+
+🎨 psql $PG_DATABASE_URL
+```
+
+Then in psql:
+```sql
+CREATE DATABASE postcard
+
+\c postcard
+
+CREATE TABLE IF NOT EXISTS user_info (recurse_id int UNIQUE NOT NULL, lob_address_id text DEFAULT '', accepts_physical_mail BOOLEAN DEFAULT FALSE, num_credits int DEFAULT 0 NOT NULL, user_name text NOT NULL, user_email text NOT NULL);
+```
+
+Finally, back in your shell
+``` shell
+
 # Run rc-postcard app
 🎨 make run
 ```

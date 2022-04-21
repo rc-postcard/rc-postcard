@@ -341,6 +341,7 @@ window.onload = function () {
         } else {
             document.getElementById('showAddressDiv').style.display = "block";
             document.getElementById('editAddressDiv').style.display = "none";
+            editAddressButton.innerText = "Edit my address";
         }
     })
 

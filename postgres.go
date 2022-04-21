@@ -9,8 +9,6 @@ import (
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
-const recurseCenterRecurseId = 0
-
 type PostgresClient struct {
 }
 
@@ -32,7 +30,7 @@ func (*PostgresClient) setupPostgresConnection() error {
 		return err
 	}
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS user_info (recurse_id int UNIQUE NOT NULL, lob_address_id text UNIQUE NOT NULL, user_name text NOT NULL, user_email text NOT NULL)")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS user_info (recurse_id int UNIQUE NOT NULL, lob_address_id text DEFAULT '', accepts_physical_mail BOOLEAN DEFAULT FALSE, num_credits int DEFAULT 0 NOT NULL, user_name text NOT NULL, user_email text NOT NULL);")
 	return err
 }
 
