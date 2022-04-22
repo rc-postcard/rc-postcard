@@ -107,13 +107,14 @@ func (*PostgresClient) getContacts() ([]*Contact, error) {
 	return contacts, nil
 }
 
-func (*PostgresClient) insertUser(recurseId int, userName, userEmail, batch string) error {
+func (*PostgresClient) insertUser(recurseId int, userName, userEmail, batch string, numCredits int) error {
 	if _, err := db.Exec(
-		"INSERT INTO user_info (recurse_id, user_name, user_email, batch) VALUES ($1, $2, $3, $4)",
+		"INSERT INTO user_info (recurse_id, user_name, user_email, batch, num_credits) VALUES ($1, $2, $3, $4, $5)",
 		recurseId,
 		userName,
 		userEmail,
-		batch); err != nil {
+		batch,
+		numCredits); err != nil {
 		return err
 	}
 	return nil
