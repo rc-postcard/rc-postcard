@@ -102,7 +102,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 			session.User.Name,
 			session.User.Email,
 			session.User.GetShortName(),
-			2); err != nil {
+			1); err != nil {
 			log.Println(err)
 			http.Error(w, "Error setting address in database", http.StatusInternalServerError)
 			return
