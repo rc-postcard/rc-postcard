@@ -18,7 +18,7 @@ import (
 const (
 	RecurseCenterName     = "Recurse Center"
 	RecurseAddressLine1   = "397 Bridge Street"
-	RecurseAddressLine2   = ""
+	RecurseAddressLine2   = "5th Floor"
 	RecurseAddressCity    = "Brooklyn"
 	RecurseAddressState   = "NY"
 	RecurseAddressZip     = "11201"
