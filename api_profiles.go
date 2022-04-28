@@ -6,12 +6,8 @@ import (
 )
 
 func serveProfiles(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodDelete {
-		deleteProfile(w, r)
-	} else {
-		http.Error(w, "Not found", http.StatusNotFound)
-		return
-	}
+	http.Error(w, "Not found", http.StatusNotFound)
+	return
 }
 
 func deleteProfile(w http.ResponseWriter, r *http.Request) {
