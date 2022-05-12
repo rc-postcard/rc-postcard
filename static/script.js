@@ -49,11 +49,16 @@ window.onload = function () {
             var opt = document.createElement('option')
             rc_id = contact["recurseId"]
             opt.value = rc_id
-            if(contact["batch"]) {
-                opt.innerText = contact["name"] + " (" + contact["batch"] + ")";
-            } else {
-                opt.innerText = contact["name"];
+            var innerText = ""
+            if (contact["acceptsPhysicalMail"]) {
+                innerText = "📮✅ "
             }
+            if(contact["batch"]) {
+                innerText += contact["name"] + " (" + contact["batch"] + ")";
+            } else {
+                innerText += contact["name"];
+            }
+            opt.innerText = innerText
             if(rc_id === 0) { // for Recurse center
                 rc_opt = opt;
             }
