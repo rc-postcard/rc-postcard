@@ -24,10 +24,12 @@
         <h2 id="sendPostcardHeading">Send a postcard to Recurse Center!</h2>
         <div>
             <h3>Select who you'd like to send your postcard to</h3>
-            <h6>See someone in RC who's not on the list? Tell them to
+            <h6 style="margin-bottom: 0">Users accepting physical mail have "📮✅" next to their names. U.S. addresses only.</h6>
+            <h6 style="margin-top: 0"> See someone in RC who's not on the list? Tell them to
                 sign up at
                 <a target="_blank" href="https://rc-postcard.fly.dev">rc-postcard.fly.dev</a>
             </h6>
+            
             <select id="recipientSelector" name="Recipient" class="js-example-basic-single" style="width: 500px">
             </select>
             <br>
@@ -53,7 +55,10 @@
         <button id="submitPhysicalPostcardButton" style="background-color: gray;" disabled>Send Physical Postcard ✉️ (__
             credits remaining)</button>
         <label id="submitPostcardStatusLabel"></label>
-
+        <h6 style="margin-bottom: 0">More postcard credits available at cost ~$0.75/postcard -- message Joseph Tobin on Zulip.
+        </h6>
+        <h6 style="margin-top: 0"> (Anything over cost will be donated to RC scholarships :) )
+        </h6>
 
         <button id="addressButton">Show my address :)</button>
         <div style="display: none;" id="addressDiv">
