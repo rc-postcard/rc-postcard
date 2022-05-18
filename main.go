@@ -66,6 +66,7 @@ func main() {
 	http.Handle("/postcards", authMiddleware(http.HandlerFunc(servePostcards)))
 	http.Handle("/contacts", authMiddleware(http.HandlerFunc(serveContacts)))
 	http.Handle("/profiles", authMiddleware(http.HandlerFunc(serveProfiles)))
+	http.HandleFunc("/stripeWebhook", serveStripeWebhook)
 
 	log.Printf("Running on port %s\n", *addr)
 
