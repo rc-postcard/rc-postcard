@@ -74,6 +74,12 @@ func serveAddress(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handleCheckoutSessionCompleted(checkoutSession stripe.CheckoutSession) {
+	recurseIdString := checkoutSession.ClientReferenceID
+	recurseId, _ := strconv.Atoi(recurseIdString)
+	postgresClient.incrementCredits(recurseId)
+}
+
 func serveStripeWebhook(w http.ResponseWriter, req *http.Request) {
 	const MaxBodyBytes = int64(65536)
 	req.Body = http.MaxBytesReader(w, req.Body, MaxBodyBytes)
@@ -105,7 +111,7 @@ func serveStripeWebhook(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// Then define and call a func to handle the successful payment intent.
-		// handleCheckoutSessionCompleted(paymentIntent)
+		handleCheckoutSessionCompleted(checkoutSession)
 	default:
 		fmt.Fprintf(os.Stderr, "Unhandled event type: %s\n", event.Type)
 	}
