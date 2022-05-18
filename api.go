@@ -185,6 +185,8 @@ type GetAddressResponse struct {
 	AddressZip          string `json:"address_zip"`
 	AddressCountry      string `json:"address_country"`
 	AcceptsPhysicalMail bool   `json:"acceptsPhysicalMail"`
+	RecurseId           int    `json:"recurse_id"`
+	Email               string `json:"email"`
 }
 
 func getAddress(w http.ResponseWriter, r *http.Request) {
@@ -218,6 +220,8 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 			AddressZip:          lobAddressResponse.AddressZip,
 			AddressCountry:      lobAddressResponse.AddressCountry,
 			AcceptsPhysicalMail: acceptsPhysicalMail,
+			RecurseId:           user.Id,
+			Email:               user.Email,
 		}
 	} else {
 		getAddressResponse = GetAddressResponse{
@@ -229,6 +233,8 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 			AddressZip:          lob.RecurseAddressZip,
 			AddressCountry:      lob.RecurseAddressCountry,
 			AcceptsPhysicalMail: false,
+			RecurseId:           user.Id,
+			Email:               user.Email,
 		}
 	}
 

@@ -24,6 +24,17 @@ window.onload = function () {
     let credits = 0;
     let address;
 
+    function updateStripeLink(recurseId, email) {
+        const queryParams = {
+            client_reference_id: recurseId,
+            prefilled_email: email
+        };
+        
+        const searchParams = new URLSearchParams(queryParams);
+        const stripeLink = document.getElementById("stripeLink");
+        stripeLink.href = "https://buy.stripe.com/test_9AQdTa9p4azr6Gc8ww?" + searchParams;
+    }
+
     fetch("/addresses").then(response =>
         response.json()
     ).then(data => {
@@ -35,6 +46,8 @@ window.onload = function () {
         document.getElementById("state").innerText = data["address_state"]
         document.getElementById("zip").innerText = data["address_zip"]
         document.getElementById("acceptsPhysicalMail").innerText = data["acceptsPhysicalMail"]
+
+        updateStripeLink(data["recurse_id"], data["email"]);
     })
 
     fetch("/contacts").then(response =>
