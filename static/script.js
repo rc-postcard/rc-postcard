@@ -32,7 +32,7 @@ window.onload = function () {
         
         const searchParams = new URLSearchParams(queryParams);
         const stripeLink = document.getElementById("stripeLink");
-        stripeLink.href = "https://buy.stripe.com/test_9AQdTa9p4azr6Gc8ww?" + searchParams;
+        stripeLink.href = "https://buy.stripe.com/test_dR66qI1WCePH0hObIJ?" + searchParams;
     }
 
     fetch("/addresses").then(response =>
