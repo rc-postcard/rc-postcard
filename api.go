@@ -2,11 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	lob "github.com/rc-postcard/rc-postcard/lob"
+	"github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/webhook"
 )
 
 // pacCache is a personal access token cache used by the /tile API
@@ -68,6 +73,62 @@ func serveAddress(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
+}
+
+func handleCheckoutSessionCompleted(checkoutSession stripe.CheckoutSession) {
+	recurseId, err := strconv.Atoi(checkoutSession.ClientReferenceID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	if checkoutSession.Livemode {
+		postgresClient.incrementCredits(recurseId)
+	}
+}
+
+func serveStripeWebhook(w http.ResponseWriter, req *http.Request) {
+	const MaxBodyBytes = int64(65536)
+	req.Body = http.MaxBytesReader(w, req.Body, MaxBodyBytes)
+	payload, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading request body: %v\n", err)
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+
+	endpointSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
+
+	// Pass the request body and Stripe-Signature header to ConstructEvent, along
+	// with the webhook signing key.
+	event, err := webhook.ConstructEvent(payload, req.Header.Get("Stripe-Signature"),
+		endpointSecret)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error verifying webhook signature: %v\n", err)
+		w.WriteHeader(http.StatusBadRequest) // Return a 400 error on a bad signature
+		return
+	}
+
+	// Unmarshal the event data into an appropriate struct depending on its Type
+	switch event.Type {
+	case "checkout.session.completed":
+		log.Printf("Event %v\n", event)
+		var checkoutSession stripe.CheckoutSession
+		err := json.Unmarshal(event.Data.Raw, &checkoutSession)
+		log.Printf("Client reference id %v\n", checkoutSession.ClientReferenceID)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing webhook JSON: %v\n", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		// Then define and call a func to handle the successful payment intent.
+		handleCheckoutSessionCompleted(checkoutSession)
+	default:
+		fmt.Fprintf(os.Stderr, "Unhandled event type: %s\n", event.Type)
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func createOrUpdateAddress(w http.ResponseWriter, r *http.Request) {
@@ -142,6 +203,9 @@ type GetAddressResponse struct {
 	AddressZip          string `json:"address_zip"`
 	AddressCountry      string `json:"address_country"`
 	AcceptsPhysicalMail bool   `json:"acceptsPhysicalMail"`
+	RecurseId           int    `json:"recurse_id"`
+	Email               string `json:"email"`
+	StripePaymentLinkId string `json:"stripePaymentLinkId"`
 }
 
 func getAddress(w http.ResponseWriter, r *http.Request) {
@@ -158,6 +222,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	paymentLinkId := os.Getenv("STRIPE_PAYMENT_LINK_ID")
 	var getAddressResponse GetAddressResponse
 	if lobAddressId != "" {
 		lobAddressResponse, err := lobClient.GetAddress(lobAddressId, true)
@@ -175,6 +240,9 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 			AddressZip:          lobAddressResponse.AddressZip,
 			AddressCountry:      lobAddressResponse.AddressCountry,
 			AcceptsPhysicalMail: acceptsPhysicalMail,
+			RecurseId:           user.Id,
+			Email:               user.Email,
+			StripePaymentLinkId: paymentLinkId,
 		}
 	} else {
 		getAddressResponse = GetAddressResponse{
@@ -186,6 +254,9 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 			AddressZip:          lob.RecurseAddressZip,
 			AddressCountry:      lob.RecurseAddressCountry,
 			AcceptsPhysicalMail: false,
+			RecurseId:           user.Id,
+			Email:               user.Email,
+			StripePaymentLinkId: paymentLinkId,
 		}
 	}
 
