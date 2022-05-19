@@ -11,6 +11,7 @@ import (
 
 	lob "github.com/rc-postcard/rc-postcard/lob"
 	"github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/webhook"
 )
 
 // pacCache is a personal access token cache used by the /tile API
@@ -75,9 +76,15 @@ func serveAddress(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleCheckoutSessionCompleted(checkoutSession stripe.CheckoutSession) {
-	recurseIdString := checkoutSession.ClientReferenceID
-	recurseId, _ := strconv.Atoi(recurseIdString)
-	postgresClient.incrementCredits(recurseId)
+	recurseId, err := strconv.Atoi(checkoutSession.ClientReferenceID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	if checkoutSession.Livemode {
+		postgresClient.incrementCredits(recurseId)
+	}
 }
 
 func serveStripeWebhook(w http.ResponseWriter, req *http.Request) {
@@ -90,11 +97,16 @@ func serveStripeWebhook(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	event := stripe.Event{}
+	endpointSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
 
-	if err := json.Unmarshal(payload, &event); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to parse webhook body json: %v\n", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
+	// Pass the request body and Stripe-Signature header to ConstructEvent, along
+	// with the webhook signing key.
+	event, err := webhook.ConstructEvent(payload, req.Header.Get("Stripe-Signature"),
+		endpointSecret)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error verifying webhook signature: %v\n", err)
+		w.WriteHeader(http.StatusBadRequest) // Return a 400 error on a bad signature
 		return
 	}
 
