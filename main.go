@@ -30,6 +30,7 @@ func main() {
 		"LOB_API_TEST_KEY",
 		"PG_DATABASE_URL",
 		"STRIPE_WEBHOOK_SECRET",
+		"STRIPE_PAYMENT_LINK_ID",
 	} {
 		if _, ok := os.LookupEnv(env); !ok {
 			log.Println("Required environment variable missing:", env)

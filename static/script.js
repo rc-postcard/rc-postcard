@@ -24,7 +24,7 @@ window.onload = function () {
     let credits = 0;
     let address;
 
-    function updateStripeLink(recurseId, email) {
+    function updateStripeLink(paymentId, recurseId, email) {
         const queryParams = {
             client_reference_id: recurseId,
             prefilled_email: email
@@ -32,7 +32,7 @@ window.onload = function () {
         
         const searchParams = new URLSearchParams(queryParams);
         const stripeLink = document.getElementById("stripeLink");
-        stripeLink.href = "https://buy.stripe.com/test_dR66qI1WCePH0hObIJ?" + searchParams;
+        stripeLink.href = "https://buy.stripe.com/" + paymentId + "?" + searchParams;
     }
 
     fetch("/addresses").then(response =>
@@ -47,7 +47,7 @@ window.onload = function () {
         document.getElementById("zip").innerText = data["address_zip"]
         document.getElementById("acceptsPhysicalMail").innerText = data["acceptsPhysicalMail"]
 
-        updateStripeLink(data["recurse_id"], data["email"]);
+        updateStripeLink(data["stripePaymentLinkId"], data["recurse_id"], data["email"]);
     })
 
     fetch("/contacts").then(response =>

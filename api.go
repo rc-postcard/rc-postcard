@@ -205,6 +205,7 @@ type GetAddressResponse struct {
 	AcceptsPhysicalMail bool   `json:"acceptsPhysicalMail"`
 	RecurseId           int    `json:"recurse_id"`
 	Email               string `json:"email"`
+	StripePaymentLinkId string `json:"stripePaymentLinkId"`
 }
 
 func getAddress(w http.ResponseWriter, r *http.Request) {
@@ -221,6 +222,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	paymentLinkId := os.Getenv("STRIPE_PAYMENT_LINK_ID")
 	var getAddressResponse GetAddressResponse
 	if lobAddressId != "" {
 		lobAddressResponse, err := lobClient.GetAddress(lobAddressId, true)
@@ -240,6 +242,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 			AcceptsPhysicalMail: acceptsPhysicalMail,
 			RecurseId:           user.Id,
 			Email:               user.Email,
+			StripePaymentLinkId: paymentLinkId,
 		}
 	} else {
 		getAddressResponse = GetAddressResponse{
@@ -253,6 +256,7 @@ func getAddress(w http.ResponseWriter, r *http.Request) {
 			AcceptsPhysicalMail: false,
 			RecurseId:           user.Id,
 			Email:               user.Email,
+			StripePaymentLinkId: paymentLinkId,
 		}
 	}
 
