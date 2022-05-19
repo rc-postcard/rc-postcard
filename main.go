@@ -29,7 +29,8 @@ func main() {
 		"OAUTH_CLIENT_SECRET",
 		"LOB_API_TEST_KEY",
 		"PG_DATABASE_URL",
-		"STRIPE_WEBHOOK_SECRET",
+		"STRIPE_WEBHOOK_TEST_SECRET",
+		"STRIPE_WEBHOOK_PROD_SECRET",
 		"STRIPE_PAYMENT_LINK_ID",
 	} {
 		if _, ok := os.LookupEnv(env); !ok {
@@ -68,7 +69,8 @@ func main() {
 	http.Handle("/postcards", authMiddleware(http.HandlerFunc(servePostcards)))
 	http.Handle("/contacts", authMiddleware(http.HandlerFunc(serveContacts)))
 	http.Handle("/profiles", authMiddleware(http.HandlerFunc(serveProfiles)))
-	http.HandleFunc("/stripeWebhook", serveStripeWebhook)
+	http.HandleFunc("/stripeWebhook", serveProdStripeWebhook)
+	http.HandleFunc("/testStripeWebhook", serveTestStripeWebhook)
 
 	log.Printf("Running on port %s\n", *addr)
 
