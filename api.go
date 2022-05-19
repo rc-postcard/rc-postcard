@@ -83,11 +83,24 @@ func handleCheckoutSessionCompleted(checkoutSession stripe.CheckoutSession) {
 	}
 
 	if checkoutSession.Livemode {
+		log.Printf("Incrementing credits for %d\n", recurseId)
 		postgresClient.incrementCredits(recurseId)
+	} else {
+		log.Printf("Not a live transaction -- not incrementing credits for %d\n", recurseId)
 	}
 }
 
-func serveStripeWebhook(w http.ResponseWriter, req *http.Request) {
+func serveTestStripeWebhook(w http.ResponseWriter, req *http.Request) {
+	endpointSecret := os.Getenv("STRIPE_WEBHOOK_TEST_SECRET")
+	serveStripeWebhook(w, req, endpointSecret)
+}
+
+func serveProdStripeWebhook(w http.ResponseWriter, req *http.Request) {
+	endpointSecret := os.Getenv("STRIPE_WEBHOOK_PROD_SECRET")
+	serveStripeWebhook(w, req, endpointSecret)
+}
+
+func serveStripeWebhook(w http.ResponseWriter, req *http.Request, endpointSecret string) {
 	const MaxBodyBytes = int64(65536)
 	req.Body = http.MaxBytesReader(w, req.Body, MaxBodyBytes)
 	payload, err := ioutil.ReadAll(req.Body)
@@ -96,8 +109,6 @@ func serveStripeWebhook(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
-
-	endpointSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
 
 	// Pass the request body and Stripe-Signature header to ConstructEvent, along
 	// with the webhook signing key.
